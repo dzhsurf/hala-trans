@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "halatrans"
+version = "0.1.0"
+description = ""
+authors = ["Hiram Deng <dzhsurf@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+black = "^24.4.2"
+isort = "^5.13.2"
+numpy = "1.26.4"
+openai = "^1.30.3"
+sounddevice = "^0.4.6"
+vosk = "0.3.44"
+fastapi = "^0.111.0"
+pydantic = "^2.7.4"
+protobuf = "^5.27.0"
+faster-whisper ="^1.0.2"
+pyzmq = "^26.0.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

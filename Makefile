@@ -1,0 +1,36 @@
+.PHONE: install run test webui format clean
+
+PROJECT_NAME=halatrans
+PYTHON=python3
+PIP=$(PYTHON) -m pip
+
+.DEFAULT_GOAL := help
+
+help: ## show this help.
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
+	@echo ""
+	@echo "Default target is 'help', showing this message."
+
+install: ## Install dependencies.
+	$(PIP) install -r requirements.txt
+
+run: ## Local run in developement mode.
+	cd halatrans && fastapi dev web.py
+
+webui: ## Local run web ui in dev mode.
+	cd webui/app && npm run start
+
+test: ## Run tests.
+	$(PYTHON) -m pytest tests/
+
+format: ## Format project code.
+	$(PYTHON) -m black $(PROJECT_NAME)
+	$(PYTHON) -m isort $(PROJECT_NAME)
+
+clean: ## Clean up build files.
+	@echo "Cleaning up..."
+	find . -type f -name '*.pyc' -delete
+	find . -type d -name '__pycache__' -exec rm -r {} +
