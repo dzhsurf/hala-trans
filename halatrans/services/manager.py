@@ -3,13 +3,14 @@ import concurrent.futures
 import logging
 import queue
 from concurrent.futures import Future, ProcessPoolExecutor
-from typing import Callable, Dict, Optional, Tuple, List  # noqa: F401
+from typing import Callable, Dict, List, Optional, Tuple  # noqa: F401
 
+from halatrans.services.audio_stream_service import AudioStreamService
 from halatrans.services.interface import BaseService, ServiceConfig
-from halatrans.services.rts2t.audio_stream_service import AudioStreamService
-from halatrans.services.rts2t.rts2t_service import RTS2TService
-from halatrans.services.rts2t.transcribe_service import TranscribeService
-from halatrans.services.rts2t.whisper_service import WhisperService
+from halatrans.services.rts2t_service import RTS2TService
+from halatrans.services.transcribe_service import TranscribeService
+from halatrans.services.translation_service import TranslationService
+from halatrans.services.whisper_service import WhisperService
 from halatrans.worker import worker
 
 logging.basicConfig(level=logging.INFO)
@@ -93,18 +94,19 @@ class ServiceManager:
         if name in self.service_state:
             return f"Service {name} already running."
 
-        if name == "rts2t":
-            # describe service component
-            def select_config_by_keys(keys: List[str]) -> Dict[str, str]:
-                config: Dict[str, str] = {
-                    "pub_addr": "tcp://localhost:5101",
-                    "audio_pub_addr": "tcp://localhost:5201",
-                    "transcribe_pub_addr": "tcp://localhost:5202",
-                    "whisper_pub_addr": "tcp://localhost:5203",
-                }
-                copied_dict = {key: config[key] for key in keys if key in config}
-                return copied_dict
+        # describe service component
+        def select_config_by_keys(keys: List[str]) -> Dict[str, str]:
+            config: Dict[str, str] = {
+                "pub_addr": "tcp://localhost:5101",
+                "audio_pub_addr": "tcp://localhost:5201",
+                "transcribe_pub_addr": "tcp://localhost:5202",
+                "whisper_pub_addr": "tcp://localhost:5203",
+                "translation_pub_addr": "tcp://localhost:5204",
+            }
+            copied_dict = {key: config[key] for key in keys if key in config}
+            return copied_dict
 
+        if name == "rts2t":
             service_dict: Dict[str, BaseService] = {
                 "rts2t": RTS2TService(
                     ServiceConfig(
@@ -133,6 +135,14 @@ class ServiceManager:
                         pub_addr=None,
                         addition=select_config_by_keys(
                             ["transcribe_pub_addr", "whisper_pub_addr"]
+                        ),
+                    )
+                ),
+                "rts2t-translation": TranslationService(
+                    ServiceConfig(
+                        pub_addr=None,
+                        addition=select_config_by_keys(
+                            ["whisper_pub_addr", "translation_pub_addr"]
                         ),
                     )
                 ),

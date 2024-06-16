@@ -1,17 +1,16 @@
+import base64
 import json
 import logging
-
+import os
 # from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-import base64
-import numpy as np
 
-import os
+import numpy as np
 import zmq
+from faster_whisper import WhisperModel
 
 from halatrans.services.interface import BaseService, ServiceConfig
-from faster_whisper import WhisperModel
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
