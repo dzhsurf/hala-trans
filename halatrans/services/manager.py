@@ -68,6 +68,7 @@ class ServiceManager:
         self.task_manager = ProcessTaskManager()
         self.service_state: ServiceState = dict()
         self.is_terminating = False
+        self.is_running = False
 
         signal.signal(signal.SIGINT, self.on_handle_sigint)
 
@@ -98,8 +99,10 @@ class ServiceManager:
             *args,
         )
 
-    def start_services(self):
-        # TODO: detect services is running
+    def start_services(self) -> str:
+        if self.is_running:
+            return "services are running."
+        self.is_running = True
 
         # describe service component
         def select_config_by_keys(keys: List[str]) -> Dict[str, str]:
@@ -167,15 +170,19 @@ class ServiceManager:
             self.service_state[k] = v
             self.submit_task(v)
 
-    def stop_service(self):
-        pass
+    def stop_services(self) -> str:
+        if not self.is_running:
+            return "services have not started yet"
+        self.is_running = False
+
+        return "Stopping services."
 
     def run_command(self, cmd: str) -> str:
         logger.info(f"Run command {cmd}")
 
         if cmd == "start":
-            self.start_services()
+            return self.start_services()
         elif cmd == "stop":
-            self.stop_services()
+            return self.stop_services()
 
-        return "Execute finish."
+        return "Unknow command"

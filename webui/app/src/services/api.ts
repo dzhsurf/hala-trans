@@ -1,5 +1,37 @@
 // import axios from 'axios';
 
+const serverURL = "http://localhost:8000/internal/services";
+
+export const send_command = async (cmd: string): Promise<string> => {
+    try {
+
+        const postData = {
+            "cmd": cmd,
+        }
+
+        const response = await fetch(serverURL,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(postData),
+            }
+        );
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const responseData = await response.json();
+        console.log('Success: ', responseData);
+        return "ok";
+    } catch (error) {
+        console.error('Error:', error);
+        return String(error);
+    }
+}
+
+
 async function connectServer<T>(serverURL: string, callback: (data: T) => boolean): Promise<void> {
     try {
 
