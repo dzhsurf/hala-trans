@@ -9,8 +9,8 @@ from fastapi import BackgroundTasks, Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from .global_instance import GlobalInstance
-from .model.services import ServiceRequest
+from halatrans.global_instance import GlobalInstance
+from halatrans.model.services import ServiceRequest
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ async def api_launch_services(
     background_tasks: BackgroundTasks,
     instance: GlobalInstance = Depends(get_global_instance),
 ):
-    msg = instance.get_service_manager().launch_service(request.service_name)
+    msg = instance.get_service_manager().run_command(request.cmd)
     content = {"message": msg}
     return JSONResponse(content, status_code=200)
 
