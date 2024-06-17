@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+
 # from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -10,6 +11,12 @@ import zmq
 from vosk import KaldiRecognizer
 
 from halatrans.services.interface import BaseService, ServiceConfig
+from halatrans.services.utils import (
+    create_pub_socket,
+    create_sub_socket,
+    nonblock_recv_multipart,
+    poll_messages,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -42,80 +49,58 @@ class TranscribeService(BaseService):
 
         ctx = zmq.Context()
 
-        transcribe_pub_addr = addition["transcribe_pub_addr"]
-        transcribe_pub = ctx.socket(zmq.PUB)
-        transcribe_pub.bind(transcribe_pub_addr)
-
-        audio_pub_addr = addition["audio_pub_addr"]
-        sub_audio = ctx.socket(zmq.SUB)
-        sub_audio.connect(audio_pub_addr)
-        sub_audio.setsockopt(zmq.SUBSCRIBE, b"audio")
-
-        poller = zmq.Poller()
-        poller.register(sub_audio, zmq.POLLIN)
+        transcribe_pub = create_pub_socket(ctx, addition["transcribe_pub_addr"])
+        audio_sub = create_sub_socket(ctx, addition["audio_pub_addr"], ["audio"])
 
         logger.info("Transcribe service start handle message...")
 
-        msgid: Optional[str] = None
+        params: List[Optional[str]] = [None]  # msgid
         chunk_buff: List[bytes] = []
-        while True:
-            if msgid is None:
+
+        def message_handler(sock: zmq.Socket, chunks: List[bytes]):
+            nonlocal chunk_buff, params, transcribe_pub
+
+            if params[0] is None:
+                # TODO: gen id, and add ts to item
                 ts = int(datetime.timestamp(datetime.now()))
-                msgid = f"msgid-{ts}"
+                params[0] = f"msgid-{ts}"
 
-            # use poller to fetch audio data
-            try:
-                socks = dict(poller.poll())
-            except KeyboardInterrupt:
-                break
+            # batch handle chunks
+            for chunk in chunks:
+                if recognizer.AcceptWaveform(chunk):
+                    recognizer.Reset()
+                    # TODO: use faster-whisper instead
+                    # res = json.loads(self.recognizer.Result())
+                    # text = res["text"]
 
-            # audio data available
-            if sub_audio in socks:
-                # fetch available chunks
-                temp_chunks = []
-                while True:
-                    try:
-                        topic, chunk = sub_audio.recv_multipart(zmq.DONTWAIT)
-                        temp_chunks.append(chunk)
-                        if len(temp_chunks) > 10:
-                            break
-                    except zmq.Again:
-                        break
+                    # output
+                    item = {
+                        "msgid": params[0],
+                        "status": "fulltext",
+                        "chunks": [
+                            base64.b64encode(item).decode("utf-8")
+                            for item in chunk_buff
+                        ],
+                    }
 
-                # batch handle chunks
-                for chunk in temp_chunks:
-                    if recognizer.AcceptWaveform(chunk):
-                        recognizer.Reset()
-                        # TODO: use faster-whisper instead
-                        # res = json.loads(self.recognizer.Result())
-                        # text = res["text"]
+                    msg_body = bytes(json.dumps(item), encoding="utf-8")
+                    transcribe_pub.send_multipart([b"prooftext", msg_body])
 
-                        # output
+                    # reset
+                    chunk_buff.clear()
+                    params[0] = None
+                else:
+                    res = json.loads(recognizer.PartialResult())
+                    text = res["partial"]
+                    if len(text) > 2:
+                        chunk_buff.append(chunk)
+
                         item = {
-                            "msgid": msgid,
-                            "status": "fulltext",
-                            "chunks": [
-                                base64.b64encode(item).decode("utf-8")
-                                for item in chunk_buff
-                            ],
+                            "msgid": params[0],
+                            "status": "partial",
+                            "text": text,
                         }
-
                         msg_body = bytes(json.dumps(item), encoding="utf-8")
-                        transcribe_pub.send_multipart([b"prooftext", msg_body])
+                        transcribe_pub.send_multipart([b"transcribe", msg_body])
 
-                        # reset
-                        chunk_buff = []
-                        msgid = None
-                    else:
-                        res = json.loads(recognizer.PartialResult())
-                        text = res["partial"]
-                        if len(text) > 2:
-                            chunk_buff.append(chunk)
-
-                            item = {
-                                "msgid": msgid,
-                                "status": "partial",
-                                "text": text,
-                            }
-                            msg_body = bytes(json.dumps(item), encoding="utf-8")
-                            transcribe_pub.send_multipart([b"transcribe", msg_body])
+        poll_messages([audio_sub], message_handler)

@@ -25,6 +25,9 @@ def process_faster_whisper_transcribe(
     frame_buffer: List[np.ndarray],
     whisper_pub: zmq.Socket,
 ):
+    if len(frame_buffer) == 0:
+        return
+    
     combined_frames = np.concatenate(frame_buffer)
 
     segments, info = faster_whipser.transcribe(

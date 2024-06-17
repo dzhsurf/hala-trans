@@ -90,9 +90,8 @@ class ServiceManager:
             *args,
         )
 
-    def launch_service(self, name: str) -> str:
-        if name in self.service_state:
-            return f"Service {name} already running."
+    def start_services(self):
+        # TODO: detect services is running
 
         # describe service component
         def select_config_by_keys(keys: List[str]) -> Dict[str, str]:
@@ -106,51 +105,61 @@ class ServiceManager:
             copied_dict = {key: config[key] for key in keys if key in config}
             return copied_dict
 
-        if name == "rts2t":
-            service_dict: Dict[str, BaseService] = {
-                "rts2t": RTS2TService(
-                    ServiceConfig(
-                        pub_addr="tcp://localhost:5101",
-                        addition=select_config_by_keys(
-                            ["transcribe_pub_addr", "whisper_pub_addr"]
-                        ),
-                    )
-                ),
-                "rts2t-audio": AudioStreamService(
-                    ServiceConfig(
-                        pub_addr=None,
-                        addition=select_config_by_keys(["audio_pub_addr"]),
-                    )
-                ),
-                "rts2t-transcribe": TranscribeService(
-                    ServiceConfig(
-                        pub_addr=None,
-                        addition=select_config_by_keys(
-                            ["audio_pub_addr", "transcribe_pub_addr"]
-                        ),
-                    )
-                ),
-                "rts2t-whisper": WhisperService(
-                    ServiceConfig(
-                        pub_addr=None,
-                        addition=select_config_by_keys(
-                            ["transcribe_pub_addr", "whisper_pub_addr"]
-                        ),
-                    )
-                ),
-                "rts2t-translation": TranslationService(
-                    ServiceConfig(
-                        pub_addr=None,
-                        addition=select_config_by_keys(
-                            ["whisper_pub_addr", "translation_pub_addr"]
-                        ),
-                    )
-                ),
-            }
+        service_dict: Dict[str, BaseService] = {
+            "rts2t": RTS2TService(
+                ServiceConfig(
+                    pub_addr="tcp://localhost:5101",
+                    addition=select_config_by_keys(
+                        ["transcribe_pub_addr", "whisper_pub_addr"]
+                    ),
+                )
+            ),
+            "rts2t-audio": AudioStreamService(
+                ServiceConfig(
+                    pub_addr=None,
+                    addition=select_config_by_keys(["audio_pub_addr"]),
+                )
+            ),
+            "rts2t-transcribe": TranscribeService(
+                ServiceConfig(
+                    pub_addr=None,
+                    addition=select_config_by_keys(
+                        ["audio_pub_addr", "transcribe_pub_addr"]
+                    ),
+                )
+            ),
+            "rts2t-whisper": WhisperService(
+                ServiceConfig(
+                    pub_addr=None,
+                    addition=select_config_by_keys(
+                        ["transcribe_pub_addr", "whisper_pub_addr"]
+                    ),
+                )
+            ),
+            "rts2t-translation": TranslationService(
+                ServiceConfig(
+                    pub_addr=None,
+                    addition=select_config_by_keys(
+                        ["whisper_pub_addr", "translation_pub_addr"]
+                    ),
+                )
+            ),
+        }
 
-            # launch all services
-            for k, v in service_dict.items():
-                self.service_state[k] = v
-                self.submit_task(v)
+        # launch all services
+        for k, v in service_dict.items():
+            self.service_state[k] = v
+            self.submit_task(v)
 
-        return f"Service {name} start."
+    def stop_service(self):
+        pass
+
+    def run_command(self, cmd: str) -> str:
+        logger.info(f"Run command {cmd}")
+
+        if cmd == "start":
+            self.start_services()
+        elif cmd == "stop":
+            self.stop_services()
+
+        return "Execute finish."

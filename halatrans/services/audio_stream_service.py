@@ -6,6 +6,7 @@ import sounddevice as sd
 import zmq
 
 from halatrans.services.interface import BaseService, ServiceConfig
+from halatrans.services.utils import create_pub_socket
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -25,18 +26,12 @@ class AudioStreamService(BaseService):
 
     @staticmethod
     def process_worker(pub_addr: Optional[str], addition: Dict[str, Any], *args):
-        # json_config = args[0]
-        # json_config["port"] = 0
-        # json_config["samplerate"] = 16000
-
         ctx = zmq.Context()
 
         config = DeviceConfig()
         logger.info("start listening, device: " + str(config))
 
-        audio_pub_addr = addition["audio_pub_addr"]
-        audio_pub = ctx.socket(zmq.PUB)
-        audio_pub.bind(audio_pub_addr)
+        audio_pub = create_pub_socket(ctx, addition["audio_pub_addr"])
 
         try:
             with sd.RawInputStream(
