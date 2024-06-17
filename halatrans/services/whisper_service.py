@@ -2,8 +2,10 @@ import base64
 import json
 import logging
 import os
+
 # from dataclasses import dataclass
 from datetime import datetime
+import signal
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -11,6 +13,7 @@ import zmq
 from faster_whisper import WhisperModel
 
 from halatrans.services.interface import BaseService, ServiceConfig
+from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,7 +30,7 @@ def process_faster_whisper_transcribe(
 ):
     if len(frame_buffer) == 0:
         return
-    
+
     combined_frames = np.concatenate(frame_buffer)
 
     segments, info = faster_whipser.transcribe(
@@ -86,62 +89,47 @@ class WhisperService(BaseService):
 
         ctx = zmq.Context()
 
-        whisper_pub_addr = addition["whisper_pub_addr"]
-        whisper_pub = ctx.socket(zmq.PUB)
-        whisper_pub.bind(whisper_pub_addr)
-
-        transcribe_sub_addr = addition["transcribe_pub_addr"]
-        transcribe_sub = ctx.socket(zmq.SUB)
-        transcribe_sub.connect(transcribe_sub_addr)
-        transcribe_sub.setsockopt(zmq.SUBSCRIBE, b"prooftext")
-
-        poller = zmq.Poller()
-        poller.register(transcribe_sub, zmq.POLLIN)
+        whisper_pub = create_pub_socket(ctx, addition["whisper_pub_addr"])
+        transcribe_sub = create_sub_socket(
+            ctx, addition["transcribe_pub_addr"], ["prooftext"]
+        )
 
         logger.info("Whisper service start handle message...")
 
-        msgid: Optional[str] = None
-        # chunk_buff: List[bytes] = []
-        while True:
-            if msgid is None:
-                ts = int(datetime.timestamp(datetime.now()))
-                msgid = f"msgid-{ts}"
+        is_exit = False
 
-            # use poller to fetch audio data
-            try:
-                socks = dict(poller.poll())
-            except KeyboardInterrupt:
-                break
+        def should_stop() -> bool:
+            nonlocal is_exit
+            return is_exit
 
-            # audio data available
-            if transcribe_sub in socks:
-                # fetch available chunks
-                temp_chunks = []
-                while True:
-                    try:
-                        topic, chunk = transcribe_sub.recv_multipart(zmq.DONTWAIT)
-                        temp_chunks.append(chunk)
-                        if len(temp_chunks) > 10:
-                            break
-                    except zmq.Again:
-                        break
+        def handle_sigint(signal_num, frame):
+            nonlocal is_exit
+            is_exit = True
 
-                # batch handle chunks
-                for temp_chunk in temp_chunks:
-                    item = json.loads(temp_chunk)
-                    msgid = item["msgid"]
-                    b64_chunks = item["chunks"]
-                    frame_buffer: List[np.ndarray] = []
-                    for b64ecoded_text in b64_chunks:
-                        chunk_bytes = base64.b64decode(b64ecoded_text)
+        signal.signal(signal.SIGINT, handle_sigint)
 
-                        frame = np.frombuffer(chunk_bytes, dtype=np.int16)
-                        audio_array = frame.astype(np.float32) / INT16_MAX_ABS_VALUE
-                        frame_buffer.append(audio_array)
-                    # use faster whisper to transcribe audio to text
-                    process_faster_whisper_transcribe(
-                        faster_whipser=faster_whipser,
-                        msgid=msgid,
-                        frame_buffer=frame_buffer,
-                        whisper_pub=whisper_pub,
-                    )
+        def messages_handler(sock: zmq.Socket, chunks: List[bytes]):
+            for chunk in chunks:
+                item = json.loads(chunk)
+                msgid = item["msgid"]
+                b64_chunks = item["chunks"]
+                frame_buffer: List[np.ndarray] = []
+                for b64ecoded_text in b64_chunks:
+                    chunk_bytes = base64.b64decode(b64ecoded_text)
+
+                    frame = np.frombuffer(chunk_bytes, dtype=np.int16)
+                    audio_array = frame.astype(np.float32) / INT16_MAX_ABS_VALUE
+                    frame_buffer.append(audio_array)
+                # use faster whisper to transcribe audio to text
+                process_faster_whisper_transcribe(
+                    faster_whipser=faster_whipser,
+                    msgid=msgid,
+                    frame_buffer=frame_buffer,
+                    whisper_pub=whisper_pub,
+                )
+
+        poll_messages([transcribe_sub], messages_handler, should_stop)
+
+        # cleanup
+        whisper_pub.close()
+        transcribe_sub.close()

@@ -26,7 +26,7 @@ def create_sub_socket(ctx: zmq.Context, addr: str, topics: List[str]) -> zmq.Soc
     sub = ctx.socket(zmq.SUB)
     sub.connect(addr)
     for topic in topics:
-        sub.setsockopt(zmq.SUBSCRIBE, bytes(topic, encoding='utf-8'))
+        sub.setsockopt(zmq.SUBSCRIBE, bytes(topic, encoding="utf-8"))
     return sub
 
 
@@ -44,7 +44,7 @@ def poll_messages(
             break
 
         try:
-            available_socks = dict(poller.poll())
+            available_socks = dict(poller.poll(timeout=5000))
         except KeyboardInterrupt:
             break
 

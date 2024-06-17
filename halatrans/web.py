@@ -67,6 +67,8 @@ async def api_streaming(instance: GlobalInstance = Depends(get_global_instance))
     async def poll_queue():
         q = instance.get_service_manager().get_service_msg_queue("rts2t")
         while True:
+            if instance.get_service_manager().is_terminating:
+                break
             item = None
             if q is None:
                 q = instance.get_service_manager().get_service_msg_queue("rts2t")

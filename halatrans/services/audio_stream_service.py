@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+import signal
 from typing import Any, Dict, Optional
 
 import sounddevice as sd
@@ -33,11 +34,19 @@ class AudioStreamService(BaseService):
 
         audio_pub = create_pub_socket(ctx, addition["audio_pub_addr"])
 
+        is_exit = False
+
+        def handle_sigint(signal_num, frame):
+            nonlocal is_exit
+            is_exit = True
+
+        signal.signal(signal.SIGINT, handle_sigint)
+
         try:
             with sd.RawInputStream(
                 samplerate=config.samplerate, channels=config.channels, dtype="int16"
             ) as stream:
-                while True:
+                while not is_exit:
                     data, overflowed = stream.read(config.blocksize)
                     if overflowed:
                         logger.warn("Warning: Buffer overflow!")

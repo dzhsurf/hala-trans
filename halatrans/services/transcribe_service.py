@@ -4,6 +4,7 @@ import logging
 
 # from dataclasses import dataclass
 from datetime import datetime
+import signal
 from typing import Any, Dict, List, Optional
 
 import vosk
@@ -57,6 +58,17 @@ class TranscribeService(BaseService):
         params: List[Optional[str]] = [None]  # msgid
         chunk_buff: List[bytes] = []
 
+        is_exit = False
+
+        def should_stop() -> bool:
+            nonlocal is_exit
+            return is_exit
+        
+        def handle_sigint(signal_num, frame):
+            nonlocal is_exit
+            is_exit = True 
+        signal.signal(signal.SIGINT, handle_sigint)
+
         def message_handler(sock: zmq.Socket, chunks: List[bytes]):
             nonlocal chunk_buff, params, transcribe_pub
 
@@ -103,4 +115,8 @@ class TranscribeService(BaseService):
                         msg_body = bytes(json.dumps(item), encoding="utf-8")
                         transcribe_pub.send_multipart([b"transcribe", msg_body])
 
-        poll_messages([audio_sub], message_handler)
+        poll_messages([audio_sub], message_handler, should_stop)
+
+        # cleanup
+        transcribe_pub.close()
+        audio_sub.close()

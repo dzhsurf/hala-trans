@@ -1,4 +1,5 @@
 import logging
+import signal
 from typing import Any, Dict, Optional, List
 
 import zmq
@@ -89,6 +90,11 @@ def openai_translate_thread(input_queue: queue.Queue, output_queue: queue.Queue)
             pass
 
         if chunk:
+            if str(chunk, encoding='utf-8') == "STOP":
+                output_queue.put("STOP")
+                break
+            
+            logger.info(chunk)
             item = json.loads(chunk)
             msgid = item["msgid"]
             status = item["status"]
@@ -142,11 +148,15 @@ def translation_pub_thread(input_queue: queue.Queue, translation_pub_addr: str):
             pass
 
         if chunk:
+            if chunk == "STOP":
+                break
             translation_pub.send_multipart(
                 [b"translation", bytes(chunk, encoding="utf-8")]
             )
         else:
             time.sleep(0.1)
+    # cleanup
+    translation_pub.close()
 
 
 class TranslationService(BaseService):
@@ -201,6 +211,17 @@ class TranslationService(BaseService):
 
         logger.info("Translation service start handle message...")
 
+        is_exit = False
+
+        def should_stop() -> bool:
+            nonlocal is_exit
+            return is_exit
+        
+        def handle_sigint(signal_num, frame):
+            nonlocal is_exit
+            is_exit = True 
+        signal.signal(signal.SIGINT, handle_sigint)
+
         def messages_handler(sock: zmq.Socket, chunks: List[bytes]):
             nonlocal input_queue
 
@@ -210,8 +231,12 @@ class TranslationService(BaseService):
                 # text = item["text"]
                 input_queue.put(chunk)
 
-        poll_messages([whisper_sub, transcribe_sub], messages_handler)
+        poll_messages([whisper_sub, transcribe_sub], messages_handler, should_stop)
 
         # cleanup
+        input_queue.put(bytes("STOP", encoding="utf-8"))
         openai_thread.join()
         pub_thread.join()
+
+        whisper_sub.close()
+        transcribe_sub.close()

@@ -3,6 +3,7 @@ import concurrent.futures
 import logging
 import queue
 from concurrent.futures import Future, ProcessPoolExecutor
+import signal
 from typing import Callable, Dict, List, Optional, Tuple  # noqa: F401
 
 from halatrans.services.audio_stream_service import AudioStreamService
@@ -66,6 +67,12 @@ class ServiceManager:
     def __init__(self):
         self.task_manager = ProcessTaskManager()
         self.service_state: ServiceState = dict()
+        self.is_terminating = False
+
+        signal.signal(signal.SIGINT, self.on_handle_sigint)
+
+    def on_handle_sigint(self, signal_num, frame):
+        self.terminate()
 
     def get_service(self, name: str) -> Optional[BaseService]:
         if name in self.service_state:
@@ -79,6 +86,7 @@ class ServiceManager:
         return None
 
     def terminate(self):
+        self.is_terminating = True
         self.task_manager.terminate()
 
     def submit_task(self, service: BaseService):
