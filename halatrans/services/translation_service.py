@@ -79,7 +79,7 @@ def openai_translate_thread(input_queue: queue.Queue, output_queue: queue.Queue)
         return
     openai_client = OpenAI(api_key=api_key)
 
-    # last_query = int(time.time())
+    last_partial_translate = 0
 
     while True:
         chunk: Optional[bytes] = None
@@ -91,20 +91,41 @@ def openai_translate_thread(input_queue: queue.Queue, output_queue: queue.Queue)
         if chunk:
             item = json.loads(chunk)
             msgid = item["msgid"]
-            # status = item["status"]
+            status = item["status"]
             text = item["text"]
-            translate_text = openai_translate_text(openai_client, text)
-            logger.info(
-                f"---- translation ----\n{text}\n---- translation ----\n{translate_text}\n---- end ----\n"
-            )
-            # output
-            translate_item = {
-                "msgid": msgid,
-                "status": "translate",
-                "text": text,
-                "translation": translate_text,
-            }
-            output_queue.put(json.dumps(translate_item))
+            if status == "fulltext":
+                # translate fulltext, final result
+                translate_text = openai_translate_text(openai_client, text)
+                logger.info(
+                    f"---- translation ----\n{text}\n---- translation ----\n{translate_text}\n---- end ----\n"
+                )
+                # output
+                translate_item = {
+                    "msgid": msgid,
+                    "status": "translate",
+                    "text": text,
+                    "translation": translate_text,
+                }
+                output_queue.put(json.dumps(translate_item))
+            elif status == "partial":
+                # translate partial text
+                cur_partial_translate = time.time()
+                # perform 1 seconds
+                if cur_partial_translate - last_partial_translate > 2:
+                    translate_text = openai_translate_text(openai_client, text)
+                    logger.info(
+                        f"---- translation ----\n{text}\n---- translation ----\n{translate_text}\n---- end ----\n"
+                    )
+                    # output
+                    translate_item = {
+                        "msgid": msgid,
+                        "status": "translating",
+                        "text": text,
+                        "translation": translate_text,
+                    }
+                    output_queue.put(json.dumps(translate_item))
+                    # update ts
+                    last_partial_translate = time.time()
         else:
             time.sleep(0.1)
 
@@ -134,10 +155,13 @@ class TranslationService(BaseService):
 
     @staticmethod
     def process_worker(pub_addr: Optional[str], addition: Dict[str, Any], *args):
-
         logger.info("start listening")
 
-        condition_keys = ["translation_pub_addr", "whisper_pub_addr"]
+        condition_keys = [
+            "translation_pub_addr",
+            "whisper_pub_addr",
+            "transcribe_pub_addr",
+        ]
         for k in condition_keys:
             if k not in addition:
                 raise ValueError(f"Key not exist: {k}")
@@ -145,6 +169,9 @@ class TranslationService(BaseService):
         ctx = zmq.Context()
         whisper_sub = create_sub_socket(
             ctx, addition["whisper_pub_addr"], ["transcribe"]
+        )
+        transcribe_sub = create_sub_socket(
+            ctx, addition["transcribe_pub_addr"], ["transcribe"]
         )
 
         # start openai thread
@@ -183,7 +210,7 @@ class TranslationService(BaseService):
                 # text = item["text"]
                 input_queue.put(chunk)
 
-        poll_messages([whisper_sub], messages_handler)
+        poll_messages([whisper_sub, transcribe_sub], messages_handler)
 
         # cleanup
         openai_thread.join()

@@ -110,7 +110,11 @@ class ServiceManager:
                 ServiceConfig(
                     pub_addr="tcp://localhost:5101",
                     addition=select_config_by_keys(
-                        ["transcribe_pub_addr", "whisper_pub_addr", "translation_pub_addr"]
+                        [
+                            "transcribe_pub_addr",
+                            "whisper_pub_addr",
+                            "translation_pub_addr",
+                        ]
                     ),
                 )
             ),
@@ -140,7 +144,11 @@ class ServiceManager:
                 ServiceConfig(
                     pub_addr=None,
                     addition=select_config_by_keys(
-                        ["whisper_pub_addr", "translation_pub_addr"]
+                        [
+                            "transcribe_pub_addr",
+                            "whisper_pub_addr",
+                            "translation_pub_addr",
+                        ]
                     ),
                 )
             ),
