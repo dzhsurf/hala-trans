@@ -22,7 +22,7 @@ const ChatBubble: React.FC<IChatBubble> = ({ text, isOwnMessage, subtext }) => {
                 sx={{
                     bgcolor: isOwnMessage ? 'lightgreen' : 'lightgray',
                     p: 1.5,
-                    maxWidth: '90%',
+                    width: '100%',
                     display: 'inline-block',
                 }}
             >
@@ -31,23 +31,23 @@ const ChatBubble: React.FC<IChatBubble> = ({ text, isOwnMessage, subtext }) => {
                     justifyContent="space-between"
                 >
                     <Typography variant="body1"
-                        paddingRight={subtext ? 2 : 0}
+                        paddingRight={2}
                         flex={1}
                         textAlign="left"
                     >
-                        {text}
+                        {text.split('\n').map((line, index) => (
+                            <div>{line}</div>
+                        ))}
                     </Typography>
-                    {subtext &&
-                        <>
-                            <Divider orientation='vertical' flexItem />
-                            <Typography variant="body1"
-                                paddingLeft={2}
-                                flex={1} textAlign="left"
-                            >
-                                {subtext}
-                            </Typography>
-                        </>
-                    }
+                    <Divider orientation='vertical' flexItem />
+                    <Typography variant="body1"
+                        paddingLeft={2}
+                        flex={1} textAlign="left"
+                    >
+                        {subtext && subtext.split('\n').map((line, index) => (
+                            <div>{line}</div>
+                        ))}
+                    </Typography>
                 </Box>
             </Paper>
         </Box>
