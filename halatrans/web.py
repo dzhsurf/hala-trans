@@ -54,7 +54,6 @@ async def api_services():
 @app.post("/internal/services")
 async def api_launch_services(
     request: ServiceRequest,
-    background_tasks: BackgroundTasks,
     instance: GlobalInstance = Depends(get_global_instance),
 ):
     msg = instance.get_service_manager().run_command(request.cmd)
@@ -67,7 +66,11 @@ async def api_streaming(instance: GlobalInstance = Depends(get_global_instance))
     async def poll_queue():
         q = instance.get_service_manager().get_service_msg_queue("rts2t")
         while True:
-            if instance.get_service_manager().is_terminating:
+            if (
+                instance.get_service_manager().is_terminating
+                or instance.get_service_manager().is_stopping
+                or instance.get_service_manager().is_exit
+            ):
                 break
             item = None
             if q is None:

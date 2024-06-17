@@ -1,6 +1,7 @@
 import logging
 import signal
 from typing import Any, Dict, Optional, List
+from multiprocessing.managers import ValueProxy
 
 import zmq
 import json
@@ -164,7 +165,7 @@ class TranslationService(BaseService):
         super().__init__(config)
 
     @staticmethod
-    def process_worker(pub_addr: Optional[str], addition: Dict[str, Any], *args):
+    def process_worker(stop_flag: ValueProxy[int], pub_addr: Optional[str], addition: Dict[str, Any], *args):
         logger.info("start listening")
 
         condition_keys = [
@@ -215,6 +216,8 @@ class TranslationService(BaseService):
 
         def should_stop() -> bool:
             nonlocal is_exit
+            if stop_flag.get() == 1:
+                is_exit = True
             return is_exit
         
         def handle_sigint(signal_num, frame):

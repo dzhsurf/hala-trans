@@ -6,6 +6,7 @@ import logging
 from datetime import datetime
 import signal
 from typing import Any, Dict, List, Optional
+from multiprocessing.managers import ValueProxy
 
 import vosk
 import zmq
@@ -15,7 +16,6 @@ from halatrans.services.interface import BaseService, ServiceConfig
 from halatrans.services.utils import (
     create_pub_socket,
     create_sub_socket,
-    nonblock_recv_multipart,
     poll_messages,
 )
 
@@ -28,7 +28,7 @@ class TranscribeService(BaseService):
         super().__init__(config)
 
     @staticmethod
-    def process_worker(pub_addr: Optional[str], addition: Dict[str, Any], *args):
+    def process_worker(stop_flag: ValueProxy[int], pub_addr: Optional[str], addition: Dict[str, Any], *args):
         # json_config = args[0]
         # sample_rate = json_config["sample_rate"]
         sample_rate = 16000
@@ -62,6 +62,8 @@ class TranscribeService(BaseService):
 
         def should_stop() -> bool:
             nonlocal is_exit
+            if stop_flag.get() == 1:
+                is_exit = True
             return is_exit
         
         def handle_sigint(signal_num, frame):

@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass
 import signal
 from typing import Any, Dict, Optional
+from multiprocessing.managers import ValueProxy
 
 import sounddevice as sd
 import zmq
@@ -26,7 +27,12 @@ class AudioStreamService(BaseService):
         super().__init__(config)
 
     @staticmethod
-    def process_worker(pub_addr: Optional[str], addition: Dict[str, Any], *args):
+    def process_worker(
+        stop_flag: ValueProxy[int],
+        pub_addr: Optional[str],
+        addition: Dict[str, Any],
+        *args,
+    ):
         ctx = zmq.Context()
 
         config = DeviceConfig()
@@ -46,7 +52,7 @@ class AudioStreamService(BaseService):
             with sd.RawInputStream(
                 samplerate=config.samplerate, channels=config.channels, dtype="int16"
             ) as stream:
-                while not is_exit:
+                while not is_exit and stop_flag.get() == 0:
                     data, overflowed = stream.read(config.blocksize)
                     if overflowed:
                         logger.warn("Warning: Buffer overflow!")

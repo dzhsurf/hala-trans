@@ -5,6 +5,8 @@ import queue
 from concurrent.futures import Future, ProcessPoolExecutor
 import signal
 from typing import Callable, Dict, List, Optional, Tuple  # noqa: F401
+from multiprocessing.managers import SyncManager, ValueProxy
+import multiprocessing
 
 from halatrans.services.audio_stream_service import AudioStreamService
 from halatrans.services.interface import BaseService, ServiceConfig
@@ -18,13 +20,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 ServiceState = Dict[str, BaseService]
+TaskStateType = Tuple[Future, ValueProxy[int]]
 
 
 class ProcessTaskManager:
     def __init__(self):
         self.counter = 0
-        self.future_dict: Dict[str, Future] = {}
+        self.future_dict: Dict[str, TaskStateType] = {}
         self.executor: ProcessPoolExecutor = ProcessPoolExecutor()
+        self.manager = multiprocessing.Manager()
 
     def gen_next_task_id(self) -> str:
         self.counter += 1
@@ -33,33 +37,39 @@ class ProcessTaskManager:
 
     def submit(self, service: BaseService, *args) -> str:
         task_id = self.gen_next_task_id()
-        future = worker.launch_process(
+        future, stop_flag = worker.launch_process(
             self.executor,
+            self.manager,
             service.__class__,
             task_id,
             *args,
         )
-        self.future_dict[task_id] = future
+        self.future_dict[task_id] = (future, stop_flag)
         logger.info(f"submit task {task_id}")
         return task_id
 
-    def cancel_task(self, task_id: str):
-        if task_id in self.future_dict:
-            future = self.future_dict.pop(task_id, None)
-            if future and not future.cancelled():
-                future.cancel()
-                concurrent.futures.wait([future])
+    # def cancel_task(self, task_id: str):
+    #     if task_id in self.future_dict:
+    #         future, stop_flag = self.future_dict.pop(task_id, None)
+    #         if future:
+    #             stop_flag.set(1)
+    #             concurrent.futures.wait([future])
 
-    def terminate(self):
+    def stop_all_tasks(self):
         futures = []
         for k, v in self.future_dict.items():
-            if not v.cancelled():
-                v.cancel()
-            futures.append(v)
-        logger.info(f"begin terminate, task count: {len(futures)}")
-        self.future_dict = []
+            future, stop_flag = v
+            if future:
+                stop_flag.set(1)
+                futures.append(future)
+        logger.info(f"Stop all tasks, task count: {len(futures)}")
+        self.future_dict = {}
         concurrent.futures.wait(futures)
+
+    def terminate(self):
+        self.stop_all_tasks()
         self.executor.shutdown()
+        self.manager.shutdown()
         logger.info("terminate finish.")
 
 
@@ -68,12 +78,16 @@ class ServiceManager:
         self.task_manager = ProcessTaskManager()
         self.service_state: ServiceState = dict()
         self.is_terminating = False
+        self.is_stopping = False
         self.is_running = False
+        self.is_exit = False
 
         signal.signal(signal.SIGINT, self.on_handle_sigint)
 
     def on_handle_sigint(self, signal_num, frame):
+        logger.info("on handle sigint!!!")
         self.terminate()
+        self.is_exit = True
 
     def get_service(self, name: str) -> Optional[BaseService]:
         if name in self.service_state:
@@ -89,6 +103,7 @@ class ServiceManager:
     def terminate(self):
         self.is_terminating = True
         self.task_manager.terminate()
+        self.is_terminating = False
 
     def submit_task(self, service: BaseService):
         args = (service.prepare_process_context(),)
@@ -102,6 +117,9 @@ class ServiceManager:
     def start_services(self) -> str:
         if self.is_running:
             return "services are running."
+        if self.is_terminating or self.is_exit or self.is_stopping:
+            return "services are stopping."
+
         self.is_running = True
 
         # describe service component
@@ -172,10 +190,16 @@ class ServiceManager:
 
     def stop_services(self) -> str:
         if not self.is_running:
-            return "services have not started yet"
-        self.is_running = False
+            return "services have not started yet."
+        if self.is_terminating or self.is_stopping or self.is_exit:
+            return "services are stopping."
 
-        return "Stopping services."
+        self.is_running = False
+        self.is_stopping = True
+        self.task_manager.stop_all_tasks()
+        self.is_stopping = False
+
+        return "Services stopped."
 
     def run_command(self, cmd: str) -> str:
         logger.info(f"Run command {cmd}")

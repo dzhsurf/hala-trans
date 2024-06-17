@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
@@ -15,24 +15,25 @@ type ServiceStateType = "" | "Running";
 export default function MyAppBar() {
 
     const [serviceState, setServiceState] = useState<ServiceStateType>("");
-    const onStartButtonClick = async (): Promise<void> => {
-        console.log('---- start');
+    const fetched = useRef(false);
+
+    const onStartButtonClick = useCallback(async (): Promise<void> => {
         const ret = await send_command("start");
         if (ret === "ok") {
             setServiceState("Running");
         } else {
             console.error(ret);
         }
-    };
-    const onStopButtonClick = async (): Promise<void> => {
-        console.log('---- stop');
+    }, []);
+
+    const onStopButtonClick = useCallback(async (): Promise<void> => {
         const ret = await send_command("stop");
         if (ret === "ok") {
             setServiceState("");
         } else {
             console.error(ret);
         }
-    };
+    }, []);
 
     useEffect(() => {
         // console.log(serviceState);

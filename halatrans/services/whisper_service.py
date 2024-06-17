@@ -3,10 +3,9 @@ import json
 import logging
 import os
 
-# from dataclasses import dataclass
-from datetime import datetime
 import signal
 from typing import Any, Dict, List, Optional
+from multiprocessing.managers import ValueProxy
 
 import numpy as np
 import zmq
@@ -68,7 +67,7 @@ class WhisperService(BaseService):
         super().__init__(config)
 
     @staticmethod
-    def process_worker(pub_addr: Optional[str], addition: Dict[str, Any], *args):
+    def process_worker(stop_flag: ValueProxy[int], pub_addr: Optional[str], addition: Dict[str, Any], *args):
         logger.info("Init faster whisper")
         os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
         model_size = "tiny.en"
@@ -100,6 +99,8 @@ class WhisperService(BaseService):
 
         def should_stop() -> bool:
             nonlocal is_exit
+            if stop_flag.get() == 1:
+                is_exit = True
             return is_exit
 
         def handle_sigint(signal_num, frame):
