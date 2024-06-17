@@ -6,13 +6,14 @@ from typing import Any, Dict, List, Optional
 import zmq
 
 from halatrans.services.interface import BaseService, ServiceConfig
-from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
+from halatrans.services.utils import (create_pub_socket, create_sub_socket,
+                                      poll_messages)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class AssistantService(BaseService):
+class ServiceTemplate(BaseService):
     def __init__(self, config: ServiceConfig):
         super().__init__(config)
 
@@ -23,14 +24,11 @@ class AssistantService(BaseService):
         addition: Dict[str, Any],
         *args,
     ):
-        logger.info("Init assistant service")
+        logger.info("Init faster whisper")
 
         ctx = zmq.Context()
-        whisper_sub = create_sub_socket(
-            ctx, addition["whisper_pub_addr"], ["transcribe"]
-        )
-
-        assistant_pub = create_pub_socket(ctx, addition["assistant_pub_addr"])
+        sub = create_sub_socket(ctx, "sub_addr", "topic")
+        pub = create_pub_socket(ctx, "pub_addr")
 
         def should_top() -> bool:
             nonlocal stop_flag
@@ -45,6 +43,7 @@ class AssistantService(BaseService):
         signal.signal(signal.SIGINT, handle_sigint)
 
         def message_handler(sock: zmq.Socket, chunks: List[bytes]):
+            # pub.send_multipart()
             pass
 
-        poll_messages([whisper_sub], message_handler, should_top)
+        poll_messages([sub], message_handler, should_top)

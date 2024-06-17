@@ -1,22 +1,19 @@
+import json
 import logging
+import os
+import queue
 import signal
-from typing import Any, Dict, Optional, List
+import threading
+import time
 from multiprocessing.managers import ValueProxy
+from typing import Any, Dict, List, Optional
 
 import zmq
-import json
-import os
 from openai import OpenAI
-import queue
-import time
-import threading
 
 from halatrans.services.interface import BaseService, ServiceConfig
-from halatrans.services.utils import (
-    create_pub_socket,
-    create_sub_socket,
-    poll_messages,
-)
+from halatrans.services.utils import (create_pub_socket, create_sub_socket,
+                                      poll_messages)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -91,10 +88,10 @@ def openai_translate_thread(input_queue: queue.Queue, output_queue: queue.Queue)
             pass
 
         if chunk:
-            if str(chunk, encoding='utf-8') == "STOP":
+            if str(chunk, encoding="utf-8") == "STOP":
                 output_queue.put("STOP")
                 break
-            
+
             logger.info(chunk)
             item = json.loads(chunk)
             msgid = item["msgid"]
@@ -165,7 +162,12 @@ class TranslationService(BaseService):
         super().__init__(config)
 
     @staticmethod
-    def process_worker(stop_flag: ValueProxy[int], pub_addr: Optional[str], addition: Dict[str, Any], *args):
+    def process_worker(
+        stop_flag: ValueProxy[int],
+        pub_addr: Optional[str],
+        addition: Dict[str, Any],
+        *args,
+    ):
         logger.info("start listening")
 
         condition_keys = [
@@ -219,10 +221,11 @@ class TranslationService(BaseService):
             if stop_flag.get() == 1:
                 is_exit = True
             return is_exit
-        
+
         def handle_sigint(signal_num, frame):
             nonlocal is_exit
-            is_exit = True 
+            is_exit = True
+
         signal.signal(signal.SIGINT, handle_sigint)
 
         def messages_handler(sock: zmq.Socket, chunks: List[bytes]):

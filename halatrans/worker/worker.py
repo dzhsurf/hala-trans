@@ -1,7 +1,7 @@
 import logging
 from concurrent.futures import Future, ProcessPoolExecutor
 from multiprocessing.managers import SyncManager, ValueProxy
-from typing import Type, TypeVar, Tuple
+from typing import Tuple, Type, TypeVar
 
 from halatrans.services.interface import BaseService
 

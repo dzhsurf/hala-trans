@@ -2,17 +2,17 @@ import base64
 import json
 import logging
 import os
-
 import signal
-from typing import Any, Dict, List, Optional
 from multiprocessing.managers import ValueProxy
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import zmq
 from faster_whisper import WhisperModel
 
 from halatrans.services.interface import BaseService, ServiceConfig
-from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
+from halatrans.services.utils import (create_pub_socket, create_sub_socket,
+                                      poll_messages)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -67,7 +67,12 @@ class WhisperService(BaseService):
         super().__init__(config)
 
     @staticmethod
-    def process_worker(stop_flag: ValueProxy[int], pub_addr: Optional[str], addition: Dict[str, Any], *args):
+    def process_worker(
+        stop_flag: ValueProxy[int],
+        pub_addr: Optional[str],
+        addition: Dict[str, Any],
+        *args,
+    ):
         logger.info("Init faster whisper")
         os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
         model_size = "tiny.en"

@@ -1,13 +1,14 @@
 import concurrent
 import concurrent.futures
 import logging
-import queue
-from concurrent.futures import Future, ProcessPoolExecutor
-import signal
-from typing import Callable, Dict, List, Optional, Tuple  # noqa: F401
-from multiprocessing.managers import SyncManager, ValueProxy
 import multiprocessing
+import queue
+import signal
+from concurrent.futures import Future, ProcessPoolExecutor
+from multiprocessing.managers import ValueProxy
+from typing import Callable, Dict, List, Optional, Tuple  # noqa: F401
 
+from halatrans.services.assistant_service import AssistantService
 from halatrans.services.audio_stream_service import AudioStreamService
 from halatrans.services.interface import BaseService, ServiceConfig
 from halatrans.services.rts2t_service import RTS2TService
@@ -130,19 +131,20 @@ class ServiceManager:
                 "transcribe_pub_addr": "tcp://localhost:5202",
                 "whisper_pub_addr": "tcp://localhost:5203",
                 "translation_pub_addr": "tcp://localhost:5204",
+                "assistant_pub_addr": "tcp://localhost:5205",
             }
             copied_dict = {key: config[key] for key in keys if key in config}
             return copied_dict
 
-        service_dict: Dict[str, BaseService] = {
+        service_desc: Dict[str, BaseService] = {
             "rts2t": RTS2TService(
                 ServiceConfig(
-                    pub_addr="tcp://localhost:5101",
+                    pub_addr="tcp://localhost:5101",  # output to main thread (webui)
                     addition=select_config_by_keys(
                         [
-                            "transcribe_pub_addr",
-                            "whisper_pub_addr",
-                            "translation_pub_addr",
+                            "transcribe_pub_addr",  # receive from transcribe (partial text)
+                            "whisper_pub_addr",  # receive from whisper (fulltext)
+                            "translation_pub_addr",  # receive from translation
                         ]
                     ),
                 )
@@ -150,14 +152,21 @@ class ServiceManager:
             "rts2t-audio": AudioStreamService(
                 ServiceConfig(
                     pub_addr=None,
-                    addition=select_config_by_keys(["audio_pub_addr"]),
+                    addition=select_config_by_keys(
+                        [
+                            "audio_pub_addr",  # output
+                        ]
+                    ),
                 )
             ),
             "rts2t-transcribe": TranscribeService(
                 ServiceConfig(
                     pub_addr=None,
                     addition=select_config_by_keys(
-                        ["audio_pub_addr", "transcribe_pub_addr"]
+                        [
+                            "audio_pub_addr",  # receive from audio stream
+                            "transcribe_pub_addr",  # output
+                        ]
                     ),
                 )
             ),
@@ -165,7 +174,10 @@ class ServiceManager:
                 ServiceConfig(
                     pub_addr=None,
                     addition=select_config_by_keys(
-                        ["transcribe_pub_addr", "whisper_pub_addr"]
+                        [
+                            "transcribe_pub_addr",  # receive from transcribe (fulltext audio buffer)
+                            "whisper_pub_addr",  # output
+                        ]
                     ),
                 )
             ),
@@ -174,9 +186,20 @@ class ServiceManager:
                     pub_addr=None,
                     addition=select_config_by_keys(
                         [
-                            "transcribe_pub_addr",
-                            "whisper_pub_addr",
-                            "translation_pub_addr",
+                            "transcribe_pub_addr",  # receive from transcribe (partial text)
+                            "whisper_pub_addr",  # receive from whisper    (fulltext)
+                            "translation_pub_addr",  # output
+                        ]
+                    ),
+                )
+            ),
+            "rts2t-assistant": AssistantService(
+                ServiceConfig(
+                    pub_addr=None,
+                    addition=select_config_by_keys(
+                        [
+                            "whisper_pub_addr",  # receive from whisper
+                            "assistant_pub_addr",  # output
                         ]
                     ),
                 )
@@ -184,7 +207,7 @@ class ServiceManager:
         }
 
         # launch all services
-        for k, v in service_dict.items():
+        for k, v in service_desc.items():
             self.service_state[k] = v
             self.submit_task(v)
 

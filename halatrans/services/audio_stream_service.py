@@ -1,8 +1,8 @@
 import logging
-from dataclasses import dataclass
 import signal
-from typing import Any, Dict, Optional
+from dataclasses import dataclass
 from multiprocessing.managers import ValueProxy
+from typing import Any, Dict, Optional
 
 import sounddevice as sd
 import zmq

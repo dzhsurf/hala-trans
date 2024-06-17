@@ -1,11 +1,13 @@
 import logging
 import signal
-from typing import Any, Dict, Optional, List
 from multiprocessing.managers import ValueProxy
+from typing import Any, Dict, List, Optional
+
 import zmq
 
 from halatrans.services.interface import BaseService, ServiceConfig
-from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
+from halatrans.services.utils import (create_pub_socket, create_sub_socket,
+                                      poll_messages)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,7 +18,12 @@ class RTS2TService(BaseService):
         super().__init__(config)
 
     @staticmethod
-    def process_worker(stop_flag: ValueProxy[int], pub_addr: Optional[str], addition: Dict[str, Any], *args):
+    def process_worker(
+        stop_flag: ValueProxy[int],
+        pub_addr: Optional[str],
+        addition: Dict[str, Any],
+        *args
+    ):
         # This is worker process
         logger.info("rts2t worker process start.")
 
@@ -45,10 +52,11 @@ class RTS2TService(BaseService):
             if stop_flag.get() == 1:
                 is_exit = True
             return is_exit
-        
+
         def handle_sigint(signal_num, frame):
             nonlocal is_exit
-            is_exit = True 
+            is_exit = True
+
         signal.signal(signal.SIGINT, handle_sigint)
 
         def message_handler(sock: zmq.Socket, chunks: List[bytes]):
@@ -56,7 +64,9 @@ class RTS2TService(BaseService):
             for chunk in chunks:
                 output_pub.send_multipart([b"rts2t", chunk])
 
-        poll_messages([transcribe_sub, whisper_sub, translation_sub], message_handler, should_stop)
+        poll_messages(
+            [transcribe_sub, whisper_sub, translation_sub], message_handler, should_stop
+        )
 
         # cleanup
         transcribe_sub.close()

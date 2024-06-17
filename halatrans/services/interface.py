@@ -4,8 +4,8 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional  # noqa: F401
 from multiprocessing.managers import ValueProxy
+from typing import Any, Callable, Dict, Optional  # noqa: F401
 
 import zmq
 
@@ -86,5 +86,10 @@ class BaseService(ABC):
 
     @staticmethod
     @abstractmethod
-    def process_worker(stop_flag: ValueProxy[int], pub_addr: Optional[str], addition: Dict[str, Any], *args):
+    def process_worker(
+        stop_flag: ValueProxy[int],
+        pub_addr: Optional[str],
+        addition: Dict[str, Any],
+        *args,
+    ):
         pass
