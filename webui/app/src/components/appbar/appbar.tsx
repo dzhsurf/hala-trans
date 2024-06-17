@@ -8,7 +8,7 @@ import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
-import { send_command } from '../../services/api';
+import { query_service_state, send_command } from '../../services/api';
 
 type ServiceStateType = "" | "Running";
 
@@ -36,9 +36,20 @@ export default function MyAppBar() {
     }, []);
 
     useEffect(() => {
-        // console.log(serviceState);
-        // setServiceState("Running");
-        // console.log(serviceState);
+        const fetchServiceState = async (): Promise<void> => {
+            if (fetched.current) {
+                return;
+            }
+            fetched.current = true;
+            const state = await query_service_state();
+            setServiceState(state);
+
+            setTimeout(async () => {
+                await fetchServiceState();
+            }, 2000);
+        };
+
+        fetchServiceState();
     }, []);
 
     return (

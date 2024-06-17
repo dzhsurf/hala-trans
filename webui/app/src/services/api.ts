@@ -31,6 +31,20 @@ export const send_command = async (cmd: string): Promise<string> => {
     }
 }
 
+export const query_service_state = async (): Promise<"" | "Running"> => {
+    try {
+        const response = await fetch("http://localhost:8000/internal/services");
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const responseData = await response.json();
+        console.log('Success: ', responseData);
+        return responseData['state'];
+    } catch (error) {
+        console.error('Error:', error);
+        return "";
+    }
+};
 
 async function connectServer<T>(serverURL: string, callback: (data: T) => boolean): Promise<void> {
     try {

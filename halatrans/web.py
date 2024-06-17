@@ -46,8 +46,11 @@ app.add_middleware(
 
 
 @app.get("/internal/services")
-async def api_services():
-    content = {}
+async def api_services(instance: GlobalInstance = Depends(get_global_instance)):
+    state = "Running" if instance.get_service_manager().is_running else ""
+    content = {
+        "state": state,
+    }
     return JSONResponse(content, status_code=200)
 
 
