@@ -33,16 +33,15 @@ class RTS2TService(BaseService):
         whisper_sub = create_sub_socket(
             ctx, addition["whisper_pub_addr"], ["transcribe"]
         )
-
-        poller = zmq.Poller()
-        poller.register(transcribe_sub, zmq.POLLIN)
-        poller.register(whisper_sub, zmq.POLLIN)
+        translation_sub = create_sub_socket(
+            ctx, addition["translation_pub_addr"], ["translation"]
+        )
 
         def message_handler(sock: zmq.Socket, chunks: List[bytes]):
             nonlocal output_pub
             for chunk in chunks:
                 output_pub.send_multipart([b"rts2t", chunk])
 
-        poll_messages([transcribe_sub, whisper_sub], message_handler)
+        poll_messages([transcribe_sub, whisper_sub, translation_sub], message_handler)
 
         logger.info("rts2t worker process end.")
