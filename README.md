@@ -21,6 +21,19 @@ Communication between subprocesses is achieved using ZeroMQ's PUB/SUB model. Eac
 
 
 
+# Development Progress Task List
+
+- [TODO] Add session management.
+- [TODO] Add a storage service to store data.
+- [TODO] Add configurable parameters for each subprocess service instead of the current hardcoded approach.
+- [TODO] Enhance assistant prompt management.
+- [TODO] Optimize user interface interactions.
+
+- [PLANNING] Improve the capabilities of the LLM Agent.
+- [PLANNING] Cross-Platform Client (Windows, macOS, Linux, iOS, Android) Release Packaging.
+
+
+
 
 Requirements
 ------------
