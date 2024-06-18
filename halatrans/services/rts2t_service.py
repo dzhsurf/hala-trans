@@ -6,8 +6,7 @@ from typing import Any, Dict, List, Optional
 import zmq
 
 from halatrans.services.interface import BaseService, ServiceConfig
-from halatrans.services.utils import (create_pub_socket, create_sub_socket,
-                                      poll_messages)
+from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -22,7 +21,7 @@ class RTS2TService(BaseService):
         stop_flag: ValueProxy[int],
         pub_addr: Optional[str],
         addition: Dict[str, Any],
-        *args
+        *args,
     ):
         # This is worker process
         logger.info("rts2t worker process start.")
@@ -43,6 +42,9 @@ class RTS2TService(BaseService):
         )
         translation_sub = create_sub_socket(
             ctx, addition["translation_pub_addr"], ["translation"]
+        )
+        assistant_sub = create_sub_socket(
+            ctx, addition["assistant_pub_addr"], ["assistant"]
         )
 
         is_exit = False
@@ -65,10 +67,18 @@ class RTS2TService(BaseService):
                 output_pub.send_multipart([b"rts2t", chunk])
 
         poll_messages(
-            [transcribe_sub, whisper_sub, translation_sub], message_handler, should_stop
+            [
+                transcribe_sub,
+                whisper_sub,
+                translation_sub,
+                assistant_sub,
+            ],
+            message_handler,
+            should_stop,
         )
 
         # cleanup
+        assistant_sub.close()
         transcribe_sub.close()
         whisper_sub.close()
         translation_sub.close()

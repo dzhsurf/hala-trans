@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, GlobalStyles } from '@mui/material';
 import MyAppBar from './components/appbar/appbar';
 
 import { ThemeProvider } from '@mui/material/styles';
@@ -11,11 +11,16 @@ import '@fontsource/roboto/700.css';
 import theme from './theme/theme';
 import Home from './containers/home';
 
+const globalStyles = {
+
+};
+
 function App() {
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <GlobalStyles styles={globalStyles} />
       {/* Your component tree */}
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
         <MyAppBar />

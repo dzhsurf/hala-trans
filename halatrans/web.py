@@ -84,7 +84,14 @@ async def api_streaming(instance: GlobalInstance = Depends(get_global_instance))
                     item = json.loads(chunk)
                 except queue.Empty:
                     pass
-            msg = {"item": item}
+            if item and "msg_type" in item:
+                msg_type = item["msg_type"]
+                if msg_type == "assistant":
+                    msg = {"assistant": item["assistant"]}
+                else:
+                    msg = {"item": item}
+            else:
+                msg = {"item": item}
             yield f"data: {json.dumps(msg)}\n\n"
             await asyncio.sleep(0.2)
 

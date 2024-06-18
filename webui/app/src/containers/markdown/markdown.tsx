@@ -8,8 +8,8 @@ interface IMarkdownPanel {
 
 const MarkdownPanel: React.FC<IMarkdownPanel> = ({ content }) => {
     return (
-        <Box sx={{ p: 2 }} >
-            <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>
+        <Box sx={{ p: 2  }} >
+            <Markdown children={content} remarkPlugins={[remarkGfm]} />
         </Box>
     );
 };

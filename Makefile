@@ -17,8 +17,8 @@ help: ## show this help.
 install: ## Install dependencies.
 	$(PIP) install -r requirements.txt
 
-run: ## Local run in developement mode.
-	cd halatrans && fastapi dev web.py
+run: ## Local run.
+	cd halatrans && fastapi run web.py
 
 webui: ## Local run web ui in dev mode.
 	cd webui/app && npm run start

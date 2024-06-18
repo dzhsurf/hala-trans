@@ -145,6 +145,7 @@ class ServiceManager:
                             "transcribe_pub_addr",  # receive from transcribe (partial text)
                             "whisper_pub_addr",  # receive from whisper (fulltext)
                             "translation_pub_addr",  # receive from translation
+                            "assistant_pub_addr",  # receive from assistant
                         ]
                     ),
                 )

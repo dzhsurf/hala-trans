@@ -22,7 +22,7 @@ const ChatBubble: React.FC<IChatBubble> = ({ text, isOwnMessage, subtext }) => {
                 sx={{
                     bgcolor: isOwnMessage ? 'lightgreen' : 'lightgray',
                     p: 1.5,
-                    width: '100%',
+                    width: '99%',
                     display: 'inline-block',
                 }}
             >
@@ -36,7 +36,7 @@ const ChatBubble: React.FC<IChatBubble> = ({ text, isOwnMessage, subtext }) => {
                         textAlign="left"
                     >
                         {text.split('\n').map((line, index) => (
-                            <div>{line}</div>
+                            <div key={"original"+index.toString()}>{line}</div>
                         ))}
                     </Typography>
                     <Divider orientation='vertical' flexItem />
@@ -45,7 +45,7 @@ const ChatBubble: React.FC<IChatBubble> = ({ text, isOwnMessage, subtext }) => {
                         flex={1} textAlign="left"
                     >
                         {subtext && subtext.split('\n').map((line, index) => (
-                            <div>{line}</div>
+                            <div key={"translate"+index.toString()}>{line}</div>
                         ))}
                     </Typography>
                 </Box>
