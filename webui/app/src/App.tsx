@@ -12,7 +12,10 @@ import theme from './theme/theme';
 import Home from './containers/home';
 
 const globalStyles = {
-
+  'code': { 
+    display: 'block',
+    overflow: 'auto',
+  },
 };
 
 function App() {

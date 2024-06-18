@@ -92,7 +92,6 @@ def openai_translate_thread(input_queue: queue.Queue, output_queue: queue.Queue)
                 output_queue.put("STOP")
                 break
 
-            logger.info(chunk)
             item = json.loads(chunk)
             msgid = item["msgid"]
             status = item["status"]
@@ -117,9 +116,9 @@ def openai_translate_thread(input_queue: queue.Queue, output_queue: queue.Queue)
                 # perform 1 seconds
                 if cur_partial_translate - last_partial_translate > 2:
                     translate_text = openai_translate_text(openai_client, text)
-                    logger.info(
-                        f"---- translation ----\n{text}\n---- translation ----\n{translate_text}\n---- end ----\n"
-                    )
+                    # logger.info(
+                    #     f"---- translation ----\n{text}\n---- translation ----\n{translate_text}\n---- end ----\n"
+                    # )
                     # output
                     translate_item = {
                         "msgid": msgid,

@@ -26,14 +26,9 @@ const ChatWindow = () => {
     const [assistantContent, setAssistantContent] = useState<string[]>([]);
     const fetched = useRef(false);
 
-    const cacheData: React.MutableRefObject<ChatBubbleProp[]> = useRef([]);
-    const assistantCacheData: React.MutableRefObject<string[]> = useRef([]);
-
     const fetched1 = useRef(false);
-    const fetched2 = useRef(false);
-
+    const cacheData: React.MutableRefObject<ChatBubbleProp[]> = useRef([]);
     const intervalRef: React.MutableRefObject<any> = useRef(null);
-    const interval2Ref: React.MutableRefObject<any> = useRef(null);
 
     useEffect(() => {
         const fetchData = async (): Promise<void> => {
@@ -47,17 +42,17 @@ const ChatWindow = () => {
             connectServer<StreamingEventItem>(server,
                 (data: StreamingEventItem): boolean => {
                     // assistant result
-                    if (data.assistant) {
-                        console.log("------: " + data.assistant.text);
-                    }
                     if (data.assistant && data.assistant.text.length > 0) {
-                        assistantCacheData.current.push(data.assistant.text);
+                        setAssistantContent((prevItems: string[]) => {
+                            const text = data.assistant!.text;
+                            return [text, ...prevItems];
+                        });
                         return false;
                     }
 
                     // transcribe result
-                    if (data.item && data.item.text.length > 0) {
-                        cacheData.current.push(data.item);
+                    if (data && data.item && data.item!.text.length > 0) {
+                        cacheData.current.push(data.item!);
                     }
 
                     return false;
@@ -130,26 +125,6 @@ const ChatWindow = () => {
         }, 500);
     }, []);
 
-    // interval update assistant
-    useEffect(() => {
-        if (fetched2.current) {
-            return;
-        }
-        fetched2.current = true;
-
-        interval2Ref.current = setInterval(() => {
-            if (assistantCacheData.current && assistantCacheData.current.length > 0) {
-                const newData = [...assistantCacheData.current];
-                setAssistantContent((prevItems: string[]) => {
-                    return [...newData, ...prevItems];
-                });
-                console.log("len: " + assistantCacheData.current.length);
-                assistantCacheData.current = [];
-            }
-        }, 500);
-    }, []);
-
-
     return (
         <>
             <Grid item xs={6} sx={{ backgroundColor: '#e3e3e3' }}>
@@ -188,7 +163,7 @@ const ChatWindow = () => {
                 >
                     {assistantContent.map((item, index) => (
                         <Box sx={{ p: 1.5, }}>
-                            <Paper key={"md-" + index.toString()} 
+                            <Paper key={"md-" + index.toString()}
                                 elevation={3}
                                 sx={{
                                     bgcolor: '#dedede',

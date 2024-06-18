@@ -9,7 +9,9 @@ interface IMarkdownPanel {
 const MarkdownPanel: React.FC<IMarkdownPanel> = ({ content }) => {
     return (
         <Box sx={{ p: 2  }} >
-            <Markdown children={content} remarkPlugins={[remarkGfm]} />
+            <div className='markdown'>
+                <Markdown children={content} remarkPlugins={[remarkGfm]} />
+            </div>
         </Box>
     );
 };

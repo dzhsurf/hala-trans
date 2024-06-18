@@ -35,14 +35,15 @@ def openai_chat_completions(client: OpenAI, text: str) -> str:
     return content
 
 
+# Do not use long sentence, response in short.
 def process_openai_assistant(client: OpenAI, pub: zmq.Socket, all_messages: List[str]):
-    user_prompt = """The following is a conversation during a software engineering interview between both parties. Summarize the main points of the interviewer's content, and respond to the questions from the perspective of the candidate. Do not use long sentence, response in short.
---------
+    user_prompt = """Below is a conversation from a software engineer interview. Analyze and extract the key points, and list the critical technologies involved along with brief descriptions. Output in Chinese.
+---
 """
 
     all_texts = ""
     for msg in all_messages:
-        all_texts += f'speaker: "{msg}"\n'
+        all_texts += f"{msg}\n\n"
 
     all_texts = user_prompt + all_texts
 
@@ -108,8 +109,9 @@ class AssistantService(BaseService):
                 all_messages.append(text)
 
             # need update
-            process_openai_assistant(client, assistant_pub, all_messages)
-
-            all_messages.clear()
+            SHIFT_WINDOW_SIZE = 3
+            if len(all_messages) >= SHIFT_WINDOW_SIZE:
+                process_openai_assistant(client, assistant_pub, all_messages)
+                all_messages = all_messages[-(SHIFT_WINDOW_SIZE - 1) :]
 
         poll_messages([whisper_sub], message_handler, should_top)
