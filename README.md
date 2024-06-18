@@ -49,7 +49,7 @@ Core components
 Languages: Python, TypeScript
 Web Server: FastAPI
 Frontend: ReactJS
-IPC / Messaging Communication: ZeroMQ
+IPC / Message Communication: ZeroMQ
 Realtime transcription: vosk
 Speech transcription: faster-whisper
 Translation & Assistant: OpenAI GPT-4o
