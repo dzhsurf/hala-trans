@@ -43,6 +43,21 @@ Python 3.11
 poetry 1.8.0
 ```
 
+Core components
+
+```
+Languages: Python, TypeScript
+Web Server: FastAPI
+Frontend: ReactJS
+IPC / Messaging Communication: ZeroMQ
+Realtime transcription: vosk
+Speech transcription: faster-whisper
+Translation & Assistant: OpenAI GPT-4o
+Database: [TBD]
+```
+
+
+
 Install & Run Background Service
 --------------------------------
 
