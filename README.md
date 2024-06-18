@@ -1,7 +1,7 @@
 hala-trans
 ----------
 
-hala-trans is a Real-Time Audio Translate AI Assistant.
+hala-trans is a Real-Time Speech Translate AI Assistant.
 
 The architecture of the hala-trans is primarily divided into the following services:
 
