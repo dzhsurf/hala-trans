@@ -13,7 +13,7 @@ The architecture of the hala-trans is primarily divided into the following servi
 6. **Translation Service:** Uses GPT-4o to translate the transcribed text.
 7. **Assistant Service:** Uses GPT-4o to analyze the transcribed text and provide assistance and suggestions.
 
-Communication between subprocesses is achieved using ZeroMQ's PUB/SUB model. Each subprocess service can be deployed independently, and load balancing of subprocess services can be implemented by combining XSUB/XPUB with PUSH/PULL models.
+Communication between subprocesses is achieved using ZeroMQ's PUB/SUB pattern. Each subprocess service can be deployed independently, and load balancing of subprocess services can be implemented by combining XSUB/XPUB, PUSH/PULL pattern.
 
 
 
