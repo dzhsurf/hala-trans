@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import signal
@@ -5,11 +6,11 @@ from multiprocessing.managers import ValueProxy
 from typing import Any, Dict, List, Optional
 
 import zmq
-import json
 from openai import OpenAI
 
 from halatrans.services.interface import BaseService, ServiceConfig
-from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
+from halatrans.services.utils import (create_pub_socket, create_sub_socket,
+                                      poll_messages)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,11 +35,13 @@ def openai_chat_completions(client: OpenAI, text: str) -> str:
     content = response.choices[0].message.content
     return content
 
+
 # extract the technical/design question from the conversation
 # then answer the question
 # 下面内容是面试过程的招聘者的语音对话内容,忽略里面的闲聊和与技术无关的信息问题,提取面试者的问题内容。使用json格式返回。
-# 例如 
+# 例如
 # { questions: ["Why are you interested in the position in Lyft?", "Talk about your work experiences."] }
+
 
 # Do not use long sentence, response in short.
 def process_openai_assistant(client: OpenAI, pub: zmq.Socket, all_messages: List[str]):
@@ -119,7 +122,9 @@ class AssistantService(BaseService):
             # need update
             SHIFT_WINDOW_SIZE = 5
             if len(all_messages) > SHIFT_WINDOW_SIZE:
-                process_openai_assistant(client, assistant_pub, all_messages[-SHIFT_WINDOW_SIZE:])
+                process_openai_assistant(
+                    client, assistant_pub, all_messages[-SHIFT_WINDOW_SIZE:]
+                )
             else:
                 process_openai_assistant(client, assistant_pub, all_messages)
 

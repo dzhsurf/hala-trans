@@ -201,17 +201,17 @@ class ServiceManager:
                     ),
                 )
             ),
-            "rts2t-assistant": AssistantService(
-                ServiceConfig(
-                    pub_addr=None,
-                    addition=select_config_by_keys(
-                        [
-                            "whisper_pub_addr",  # receive from whisper
-                            "assistant_pub_addr",  # output
-                        ]
-                    ),
-                )
-            ),
+            # "rts2t-assistant": AssistantService(
+            #     ServiceConfig(
+            #         pub_addr=None,
+            #         addition=select_config_by_keys(
+            #             [
+            #                 "whisper_pub_addr",  # receive from whisper
+            #                 "assistant_pub_addr",  # output
+            #             ]
+            #         ),
+            #     )
+            # ),
         }
 
         # launch all services
