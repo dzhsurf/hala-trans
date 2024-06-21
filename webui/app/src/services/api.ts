@@ -32,6 +32,7 @@ export const send_command = async (cmd: string): Promise<string> => {
 }
 
 export interface ServiceStateType {
+    error?: any
     runningState: "" | "Running"
     deviceName: string 
 };
@@ -48,6 +49,7 @@ export const queryServiceState = async (): Promise<ServiceStateType> => {
     } catch (error) {
         console.error('Error:', error);
         return {
+            error: error,
             runningState: "",
             deviceName: "NOT SELECTED",
         };
