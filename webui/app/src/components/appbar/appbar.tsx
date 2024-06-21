@@ -69,7 +69,8 @@ export default function MyAppBar() {
                 name: state.deviceName,
                 index: 0, // TODO: use state.deviceIndex
             });
-            const waitTime = 2000 + (state.error) ? 10000 : 0;
+            const waitTime = 5000 + ((state.error) ? 10000 : 0);
+
             setTimeout(async () => {
                 await fetchServiceState();
             }, waitTime);
