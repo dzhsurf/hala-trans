@@ -12,6 +12,7 @@ from halatrans.services.assistant_service import AssistantService
 from halatrans.services.audio_stream_service import AudioStreamService
 from halatrans.services.interface import BaseService, ServiceConfig
 from halatrans.services.rts2t_service import RTS2TService
+from halatrans.services.storage_service import StorageService
 from halatrans.services.transcribe_service import TranscribeService
 from halatrans.services.translation_service import TranslationService
 from halatrans.services.whisper_service import WhisperService
@@ -212,6 +213,17 @@ class ServiceManager:
             #         ),
             #     )
             # ),
+            "rts2t-storage": StorageService(
+                ServiceConfig(
+                    pub_addr=None,
+                    addition=select_config_by_keys(
+                        [
+                            "whisper_pub_addr",  # receive from whisper    (fulltext)
+                            "translation_pub_addr",  # receive from translation
+                        ]
+                    ),
+                )
+            ),
         }
 
         # launch all services

@@ -1,0 +1,48 @@
+import logging
+import signal
+from multiprocessing.managers import ValueProxy
+from typing import Any, Dict, List, Optional
+
+import zmq
+
+from halatrans.services.interface import BaseService, ServiceConfig
+from halatrans.services.utils import create_sub_socket, poll_messages
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class StorageService(BaseService):
+    def __init__(self, config: ServiceConfig):
+        super().__init__(config)
+
+    @staticmethod
+    def process_worker(
+        stop_flag: ValueProxy[int],
+        pub_addr: Optional[str],
+        addition: Dict[str, Any],
+        *args,
+    ):
+        logger.info("Init storage ")
+
+        ctx = zmq.Context()
+        whisper_sub = create_sub_socket(ctx, "whisper_pub_addr", "topic")
+        translation_sub = create_sub_socket(ctx, "translation_pub_addr", "topic")
+
+        def should_top() -> bool:
+            nonlocal stop_flag
+            if stop_flag.get() == 1:
+                return True
+            return False
+
+        def handle_sigint(signal_num, frame):
+            nonlocal stop_flag
+            stop_flag.set(1)
+
+        signal.signal(signal.SIGINT, handle_sigint)
+
+        def message_handler(sock: zmq.Socket, chunks: List[bytes]):
+            # pub.send_multipart()
+            pass
+
+        poll_messages([whisper_sub, translation_sub], message_handler, should_top)
