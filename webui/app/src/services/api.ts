@@ -46,46 +46,64 @@ export const query_service_state = async (): Promise<"" | "Running"> => {
     }
 };
 
-async function connectServer<T>(serverURL: string, callback: (data: T) => boolean): Promise<void> {
-    try {
+export type OnErrorCallback = (error: any) => boolean | null;
+export type OnReceiveDataCallback<T> = (data: T) => boolean | null;
 
-        const response = await fetch(serverURL);
-        const reader = response.body!.getReader();
-        const decoder = new TextDecoder('utf-8');
+async function connectDataStreamingServer<T>(serverURL: string,
+    abortController: AbortController,
+    callback: OnReceiveDataCallback<T>,
+    onError: OnErrorCallback): Promise<void> {
 
-        while (true) {
-            // ReadableStreamReadResult<Uint8Array>
-            const { done, value } = await reader.read();
-            if (done) {
-                console.log('Stream finished.');
-                break;
-            }
+    console.info("start data streaming...");
+    const { signal } = abortController;
+    while (!signal.aborted) {
+        try {
 
-            const bodyText: string = decoder.decode(value);
-            const chunks: string[] = bodyText.trim().split("\n\n");
-            let stop = false;
-            for (const i in chunks) {
-                const chunk = chunks[i].substring(6);
-                console.log(chunk);
-                const data: T = JSON.parse(chunk);
-                let stop = false;
-                if (callback) {
-                    stop = callback(data);
-                }
-                if (stop) {
+            const response = await fetch(serverURL);
+            const reader = response.body!.getReader();
+            const decoder = new TextDecoder('utf-8');
+
+            while (true) {
+                if (signal.aborted) {
                     break;
                 }
+
+                // ReadableStreamReadResult<Uint8Array>
+                const { done, value } = await reader.read();
+                if (done) {
+                    console.log('Stream finished.');
+                    break;
+                }
+
+                const bodyText: string = decoder.decode(value);
+                const chunks: string[] = bodyText.trim().split("\n\n");
+                let stop = false;
+                for (const i in chunks) {
+                    if (signal.aborted) {
+                        break;
+                    }
+
+                    const chunk = chunks[i].substring(6);
+                    // console.log(chunk);
+                    const data: T = JSON.parse(chunk);
+                    if (callback && callback(data)) {
+                        abortController.abort("STOP");
+                    }
+                }
             }
-            if (stop) {
+        } catch (error) {
+            console.log(error);
+            if (onError && onError(error)) {
+                abortController.abort("STOP");
                 break;
             }
+
+            // wait 5 seconds...
+            await new Promise((resolver) => { setTimeout(resolver, 5000) });
         }
-    } catch (error) {
-        console.log(error);
-        setTimeout(() => {
-            connectServer<T>(serverURL, callback);
-        }, 5000);
     }
+
+    console.info("data streaming end.")
 };
 
-export default connectServer;
+export default connectDataStreamingServer;

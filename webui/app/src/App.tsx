@@ -1,5 +1,5 @@
 import { Box, GlobalStyles } from '@mui/material';
-import MyAppBar from './components/appbar/appbar';
+import MyAppBar from './components/AppBar/AppBar';
 
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -12,9 +12,12 @@ import theme from './theme/theme';
 import Home from './containers/home';
 
 const globalStyles = {
-  'code': { 
+  'code': {
     display: 'block',
     overflow: 'auto',
+  },
+  'span.text-line': {
+    display: 'block',
   },
 };
 

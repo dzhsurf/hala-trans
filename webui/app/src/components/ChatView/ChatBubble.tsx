@@ -1,10 +1,11 @@
 import React from 'react';
 import { Box, Typography, Paper, Divider } from '@mui/material';
+import { Label } from '@mui/icons-material';
 
 interface IChatBubble {
-    text: string
-    isOwnMessage: boolean
-    subtext: string | null
+    text: string;
+    isOwnMessage: boolean;
+    subtext?: string;
 };
 
 const ChatBubble: React.FC<IChatBubble> = ({ text, isOwnMessage, subtext }) => {
@@ -36,7 +37,7 @@ const ChatBubble: React.FC<IChatBubble> = ({ text, isOwnMessage, subtext }) => {
                         textAlign="left"
                     >
                         {text.split('\n').map((line, index) => (
-                            <div key={"original"+index.toString()}>{line}</div>
+                            <span className='text-line' key={"original-"+index.toString()}>{line}</span>
                         ))}
                     </Typography>
                     <Divider orientation='vertical' flexItem />
@@ -45,7 +46,7 @@ const ChatBubble: React.FC<IChatBubble> = ({ text, isOwnMessage, subtext }) => {
                         flex={1} textAlign="left"
                     >
                         {subtext && subtext.split('\n').map((line, index) => (
-                            <div key={"translate"+index.toString()}>{line}</div>
+                            <span className='text-line' key={"translate-"+index.toString()}>{line}</span>
                         ))}
                     </Typography>
                 </Box>
