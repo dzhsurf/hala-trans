@@ -218,7 +218,7 @@ class ServiceManager:
                     pub_addr=None,
                     addition=select_config_by_keys(
                         [
-                            "whisper_pub_addr",  # receive from whisper    (fulltext)
+                            "transcribe_pub_addr",  # receive from transcribe (fulltext)
                             "translation_pub_addr",  # receive from translation
                         ]
                     ),
