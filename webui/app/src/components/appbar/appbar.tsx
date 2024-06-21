@@ -9,7 +9,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import { query_service_state, send_command } from '../../services/api';
+import { queryServiceState, send_command } from '../../services/api';
 import AudioDevicePicker from '../AudioDevicePicker/AudioDevicePicker';
 import StartConfigDialogComponent from '../Dialog/StartConfigDialog';
 
@@ -55,25 +55,27 @@ export default function MyAppBar() {
         }
         fetched.current = true;
 
-        const updateDeviceInfo = () => {
+        const updateDeviceInfo = (deviceInfo: IDeviceInfo) => {
             setDeviceInfo(() => {
-                return null;
-                return { name: 'Device 4: Soundflower (2ch)', index: 2 } as IDeviceInfo;
+                return deviceInfo;
             });
         };
 
         const fetchServiceState = async (): Promise<void> => {
 
-            const state = await query_service_state();
-            setServiceState(state);
+            const state = await queryServiceState();
+            setServiceState(state.runningState);
+            updateDeviceInfo({
+                name: state.deviceName,
+                index: 0, // TODO: use state.deviceIndex
+            });
 
             setTimeout(async () => {
                 await fetchServiceState();
             }, 2000);
         };
 
-        // updateDeviceInfo();
-        // fetchServiceState();
+        fetchServiceState();
     }, []);
 
     return (

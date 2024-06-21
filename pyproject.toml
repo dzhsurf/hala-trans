@@ -18,6 +18,7 @@ pydantic = "^2.7.4"
 protobuf = "^5.27.0"
 faster-whisper ="^1.0.2"
 pyzmq = "^26.0.3"
+pyaudio = "^0.2.14"
 
 [build-system]
 requires = ["poetry-core"]

@@ -9,6 +9,7 @@ import zmq
 
 from halatrans.services.interface import BaseService, ServiceConfig
 from halatrans.services.utils import create_pub_socket
+from halatrans.utils.device import get_audio_device_index
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -48,9 +49,15 @@ class AudioStreamService(BaseService):
 
         signal.signal(signal.SIGINT, handle_sigint)
 
+        selected_device = get_audio_device_index()
+        logger.info(f"Selected Device: {selected_device}")
+
         try:
             with sd.RawInputStream(
-                samplerate=config.samplerate, channels=config.channels, dtype="int16"
+                device=selected_device,  # stereo_mix_index, e.g. soundflow 2ch
+                samplerate=config.samplerate,
+                channels=config.channels,
+                dtype="int16",
             ) as stream:
                 while not is_exit and stop_flag.get() == 0:
                     data, overflowed = stream.read(config.blocksize)

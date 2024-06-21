@@ -49,7 +49,8 @@ app.add_middleware(
 async def api_services(instance: GlobalInstance = Depends(get_global_instance)):
     state = "Running" if instance.get_service_manager().is_running else ""
     content = {
-        "state": state,
+        "runningState": state,
+        "deviceName": "DEVICE",  # TODO: get device state
     }
     return JSONResponse(content, status_code=200)
 

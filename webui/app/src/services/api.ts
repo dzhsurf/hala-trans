@@ -31,7 +31,12 @@ export const send_command = async (cmd: string): Promise<string> => {
     }
 }
 
-export const query_service_state = async (): Promise<"" | "Running"> => {
+export interface ServiceStateType {
+    runningState: "" | "Running"
+    deviceName: string 
+};
+
+export const queryServiceState = async (): Promise<ServiceStateType> => {
     try {
         const response = await fetch("http://localhost:8000/internal/services");
         if (!response.ok) {
@@ -39,10 +44,13 @@ export const query_service_state = async (): Promise<"" | "Running"> => {
         }
         const responseData = await response.json();
         console.log('Success: ', responseData);
-        return responseData['state'];
+        return responseData;
     } catch (error) {
         console.error('Error:', error);
-        return "";
+        return {
+            runningState: "",
+            deviceName: "NOT SELECTED",
+        };
     }
 };
 
