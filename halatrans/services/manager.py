@@ -76,7 +76,7 @@ class ProcessTaskManager:
 
 class ServiceManager:
     def __init__(self):
-        self.task_manager = ProcessTaskManager()
+        self.task_manager = None
         self.service_state: ServiceState = dict()
         self.is_terminating = False
         self.is_stopping = False
@@ -102,8 +102,12 @@ class ServiceManager:
         return None
 
     def terminate(self):
+        self.is_running = False
         self.is_terminating = True
-        self.task_manager.terminate()
+        if self.task_manager:
+            self.task_manager.terminate()
+            self.task_manager = None
+        self.service_state = {}
         self.is_terminating = False
 
     def submit_task(self, service: BaseService):
@@ -120,6 +124,9 @@ class ServiceManager:
             return "services are running."
         if self.is_terminating or self.is_exit or self.is_stopping:
             return "services are stopping."
+
+        if self.task_manager is None:
+            self.task_manager = ProcessTaskManager()
 
         self.is_running = True
 
@@ -218,9 +225,9 @@ class ServiceManager:
         if self.is_terminating or self.is_stopping or self.is_exit:
             return "services are stopping."
 
-        self.is_running = False
         self.is_stopping = True
-        self.task_manager.stop_all_tasks()
+        # self.task_manager.stop_all_tasks()
+        self.terminate()
         self.is_stopping = False
 
         return "Services stopped."

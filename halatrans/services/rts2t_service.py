@@ -6,7 +6,8 @@ from typing import Any, Dict, List, Optional
 import zmq
 
 from halatrans.services.interface import BaseService, ServiceConfig
-from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
+from halatrans.services.utils import (create_pub_socket, create_sub_socket,
+                                      poll_messages)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
