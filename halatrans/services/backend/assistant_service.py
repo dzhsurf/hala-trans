@@ -1,19 +1,25 @@
 import json
 import logging
 import os
-import signal
+from dataclasses import dataclass
 from multiprocessing.managers import ValueProxy
 from typing import Any, Dict, List, Optional
 
 import zmq
 from openai import OpenAI
 
-from halatrans.services.interface import BaseService, ServiceConfig
+from halatrans.services.base_service import BaseService, ServiceConfig
 from halatrans.services.utils import (create_pub_socket, create_sub_socket,
                                       poll_messages)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class AssistantServiceParameters:
+    whisper_pub_addr: str
+    assistant_pub_addr: str
 
 
 def openai_chat_completions(client: OpenAI, text: str) -> str:
@@ -75,35 +81,23 @@ class AssistantService(BaseService):
         super().__init__(config)
 
     @staticmethod
-    def process_worker(
-        stop_flag: ValueProxy[int],
-        pub_addr: Optional[str],
-        addition: Dict[str, Any],
-        *args,
+    def on_worker_process_custom(
+        stop_flag: ValueProxy[int], parameters: Dict[str, Any]
     ):
-        logger.info("Init assistant service")
+        config = AssistantServiceParameters(**parameters)
+        logger.info(f"AssistantService worker start. {config}")
 
         ctx = zmq.Context()
-        whisper_sub = create_sub_socket(
-            ctx, addition["whisper_pub_addr"], ["transcribe"]
-        )
-
-        assistant_pub = create_pub_socket(ctx, addition["assistant_pub_addr"])
+        whisper_sub = create_sub_socket(ctx, config.whisper_pub_addr, ["transcribe"])
+        assistant_pub = create_pub_socket(ctx, config.assistant_pub_addr)
 
         api_key = os.getenv("OPENAI_API_KEY", "")
         client = OpenAI(api_key=api_key)
 
         def should_top() -> bool:
-            nonlocal stop_flag
-            if stop_flag.get() == 1:
+            if stop_flag.get() != 0:
                 return True
             return False
-
-        def handle_sigint(signal_num, frame):
-            nonlocal stop_flag
-            stop_flag.set(1)
-
-        signal.signal(signal.SIGINT, handle_sigint)
 
         all_messages: List[str] = []
 
@@ -129,3 +123,5 @@ class AssistantService(BaseService):
                 process_openai_assistant(client, assistant_pub, all_messages)
 
         poll_messages([whisper_sub], message_handler, should_top)
+
+        logger.info("AssistantService worker end.")

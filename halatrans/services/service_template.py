@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 import zmq
 
-from halatrans.services.interface import BaseService, ServiceConfig
+from halatrans.services.base_service import BaseService, ServiceConfig
 from halatrans.services.utils import (create_pub_socket, create_sub_socket,
                                       poll_messages)
 
@@ -22,13 +22,14 @@ class ServiceTemplate(BaseService):
         stop_flag: ValueProxy[int],
         pub_addr: Optional[str],
         addition: Dict[str, Any],
+        parameters: Dict[str, Any],
         *args,
     ):
-        logger.info("Init faster whisper")
+        logger.info("Init xxx service")
 
         ctx = zmq.Context()
-        sub = create_sub_socket(ctx, "sub_addr", "topic")
-        pub = create_pub_socket(ctx, "pub_addr")
+        sub = create_sub_socket(ctx, addition["sub_addr"], "topic")
+        pub = create_pub_socket(ctx, addition["pub_addr"])
 
         def should_top() -> bool:
             nonlocal stop_flag

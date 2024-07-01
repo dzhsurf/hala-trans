@@ -2,21 +2,28 @@ import json
 import logging
 import os
 import queue
-import signal
 import threading
 import time
+from dataclasses import dataclass
 from multiprocessing.managers import ValueProxy
 from typing import Any, Dict, List, Optional
 
 import zmq
 from openai import OpenAI
 
-from halatrans.services.interface import BaseService, ServiceConfig
+from halatrans.services.base_service import BaseService, ServiceConfig
 from halatrans.services.utils import (create_pub_socket, create_sub_socket,
                                       poll_messages)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class TranslationServiceParameters:
+    transcribe_pub_addr: str
+    whisper_pub_addr: str
+    translation_pub_addr: str
 
 
 prompt_sample_ask = """Translate below English texts into Chinese.
@@ -161,29 +168,16 @@ class TranslationService(BaseService):
         super().__init__(config)
 
     @staticmethod
-    def process_worker(
-        stop_flag: ValueProxy[int],
-        pub_addr: Optional[str],
-        addition: Dict[str, Any],
-        *args,
+    def on_worker_process_custom(
+        stop_flag: ValueProxy[int], parameters: Dict[str, Any]
     ):
-        logger.info("start listening")
-
-        condition_keys = [
-            "translation_pub_addr",
-            "whisper_pub_addr",
-            "transcribe_pub_addr",
-        ]
-        for k in condition_keys:
-            if k not in addition:
-                raise ValueError(f"Key not exist: {k}")
+        config = TranslationServiceParameters(**parameters)
+        logger.info(f"TranslationService worker start. {config}")
 
         ctx = zmq.Context()
-        whisper_sub = create_sub_socket(
-            ctx, addition["whisper_pub_addr"], ["transcribe"]
-        )
+        whisper_sub = create_sub_socket(ctx, config.whisper_pub_addr, ["transcribe"])
         transcribe_sub = create_sub_socket(
-            ctx, addition["transcribe_pub_addr"], ["transcribe"]
+            ctx, config.transcribe_pub_addr, ["transcribe"]
         )
 
         # start openai thread
@@ -205,7 +199,7 @@ class TranslationService(BaseService):
             target=translation_pub_thread,
             args=(
                 output_queue,
-                addition["translation_pub_addr"],
+                config.translation_pub_addr,
             ),
         )
         pub_thread.daemon = True
@@ -213,19 +207,10 @@ class TranslationService(BaseService):
 
         logger.info("Translation service start handle message...")
 
-        is_exit = False
-
         def should_stop() -> bool:
-            nonlocal is_exit
-            if stop_flag.get() == 1:
-                is_exit = True
-            return is_exit
-
-        def handle_sigint(signal_num, frame):
-            nonlocal is_exit
-            is_exit = True
-
-        signal.signal(signal.SIGINT, handle_sigint)
+            if stop_flag.get() != 0:
+                return True
+            return False
 
         def messages_handler(sock: zmq.Socket, chunks: List[bytes]):
             nonlocal input_queue
@@ -245,3 +230,5 @@ class TranslationService(BaseService):
 
         whisper_sub.close()
         transcribe_sub.close()
+
+        logger.info("TranslationService worker end.")

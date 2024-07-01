@@ -10,7 +10,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from halatrans.global_instance import GlobalInstance
-from halatrans.model.services import ServiceRequest
+from halatrans.model.services import AudioStreamControlRequest, ServiceRequest
+from halatrans.services.frontend.audio_stream_service import \
+    AudioStreamServiceParameters
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,13 +28,12 @@ async def get_global_instance() -> GlobalInstance:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # instance = await get_global_instance()
-    # instance.startup()
+    instance = await get_global_instance()
+    instance.startup()
     try:
         yield
     finally:
-        print("")
-        # await get_global_instance().terminate()
+        await get_global_instance().terminate()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -45,9 +46,12 @@ app.add_middleware(
 )
 
 
-@app.get("/internal/services")
-async def api_services(instance: GlobalInstance = Depends(get_global_instance)):
-    state = "Running" if instance.get_service_manager().is_running else ""
+# Backend API
+@app.get("/api/service_management")
+async def service_management_query(
+    instance: GlobalInstance = Depends(get_global_instance),
+):
+    state = "Running" if instance.get_backend_service_manager().is_running else ""
     content = {
         "runningState": state,
         "deviceName": "DEVICE",  # TODO: get device state
@@ -55,30 +59,47 @@ async def api_services(instance: GlobalInstance = Depends(get_global_instance)):
     return JSONResponse(content, status_code=200)
 
 
-@app.post("/internal/services")
-async def api_launch_services(
+@app.post("/api/service_management")
+async def service_management_ctrl(
     request: ServiceRequest,
     instance: GlobalInstance = Depends(get_global_instance),
 ):
-    msg = instance.get_service_manager().run_command(request.cmd)
+    msg = instance.get_backend_service_manager().run_command(request.cmd)
     content = {"message": msg}
     return JSONResponse(content, status_code=200)
 
 
-@app.get("/api/streaming")
-async def api_streaming(instance: GlobalInstance = Depends(get_global_instance)):
+@app.get("/api/event_stream")
+async def event_stream(instance: GlobalInstance = Depends(get_global_instance)):
     async def poll_queue():
-        q = instance.get_service_manager().get_service_msg_queue("rts2t")
+        # inside
+        # async def receive_data():
+        #    while True: ...
+        #        await receive(block, timeout=0.2) ...
+        #        queueu.put(...) # have size limit
+
+        # task = asyncio.create_task(receive_data())
+        # await asyncio.gather(task)
+
+        # rts2t = instance.get_backend_service_manager().get_service('rts2t')
+        # while True:
+        #   chunks = await rts2t.batch_recv(timeout=0.2)
+        #   for chunk in chunks:
+        #       yield chunk
+
+        q = instance.get_backend_service_manager().get_service_msg_queue("rts2t")
         while True:
             if (
-                instance.get_service_manager().is_terminating
-                or instance.get_service_manager().is_stopping
-                or instance.get_service_manager().is_exit
+                instance.get_backend_service_manager().is_terminating
+                or instance.get_backend_service_manager().is_stopping
+                or instance.get_backend_service_manager().is_exit
             ):
                 break
             item = None
             if q is None:
-                q = instance.get_service_manager().get_service_msg_queue("rts2t")
+                q = instance.get_backend_service_manager().get_service_msg_queue(
+                    "rts2t"
+                )
             else:
                 try:
                     chunk = q.get(block=False)
@@ -97,3 +118,37 @@ async def api_streaming(instance: GlobalInstance = Depends(get_global_instance))
             await asyncio.sleep(0.2)
 
     return StreamingResponse(poll_queue(), media_type="text/event-stream")
+
+
+# Frontend API
+@app.get("/api/devices")
+async def devices_query(instance: GlobalInstance = Depends(get_global_instance)):
+    audio_device = instance.get_frontend_service_manager().get_audio_device()
+
+    input = json.dumps(
+        {
+            "cmd": "list-device",
+        }
+    )
+    resp = await audio_device.request(input)
+    return JSONResponse(json.loads(resp), status_code=200)
+
+
+@app.post("/api/record")
+async def start_record(
+    req: AudioStreamControlRequest,
+    instance: GlobalInstance = Depends(get_global_instance),
+):
+    # TODO: multi-user support
+
+    if req.cmd == "start":
+        p = AudioStreamServiceParameters()
+        if req.deviceIndex >= 0:
+            p.device = req.deviceIndex
+        instance.get_frontend_service_manager().launch_audio_stream(p)
+    elif req.cmd == "stop":
+        instance.get_frontend_service_manager().stop_audio_stream()
+    else:
+        logger.error(f"Unknow command: {req}")
+
+    return JSONResponse(dict(req), status_code=200)

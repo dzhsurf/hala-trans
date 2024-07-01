@@ -1,7 +1,7 @@
 import base64
 import json
 import logging
-import signal
+from dataclasses import dataclass
 # from dataclasses import dataclass
 from datetime import datetime
 from multiprocessing.managers import ValueProxy
@@ -11,7 +11,7 @@ import vosk
 import zmq
 from vosk import KaldiRecognizer
 
-from halatrans.services.interface import BaseService, ServiceConfig
+from halatrans.services.base_service import BaseService, ServiceConfig
 from halatrans.services.utils import (create_pub_socket, create_sub_socket,
                                       poll_messages)
 
@@ -19,19 +19,24 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class TranscribeServiceParameters:
+    audio_pub_addr: str
+    audio_pub_topic: str
+    transcribe_pub_addr: str
+
+
 class TranscribeService(BaseService):
     def __init__(self, config: ServiceConfig):
         super().__init__(config)
 
     @staticmethod
-    def process_worker(
-        stop_flag: ValueProxy[int],
-        pub_addr: Optional[str],
-        addition: Dict[str, Any],
-        *args,
+    def on_worker_process_custom(
+        stop_flag: ValueProxy[int], parameters: Dict[str, Any]
     ):
-        # json_config = args[0]
-        # sample_rate = json_config["sample_rate"]
+        config = TranscribeServiceParameters(**parameters)
+        logger.info(f"TranscribeService worker start. {config}")
+
         sample_rate = 16000
 
         logger.info("Start init vosk...")
@@ -42,36 +47,24 @@ class TranscribeService(BaseService):
         recognizer = KaldiRecognizer(model, sample_rate)
         logger.info("Init vosk finish.")
 
-        logger.info(f"Initial MQ, {addition}")
-
-        condition_keys = ["transcribe_pub_addr", "audio_pub_addr"]
-        for k in condition_keys:
-            if k not in addition:
-                raise ValueError(f"Key not exist: {k}")
+        logger.info("Initial MQ")
 
         ctx = zmq.Context()
 
-        transcribe_pub = create_pub_socket(ctx, addition["transcribe_pub_addr"])
-        audio_sub = create_sub_socket(ctx, addition["audio_pub_addr"], ["audio"])
+        transcribe_pub = create_pub_socket(ctx, config.transcribe_pub_addr)
+        audio_sub = create_sub_socket(
+            ctx, config.audio_pub_addr, [config.audio_pub_topic]
+        )
 
         logger.info("Transcribe service start handle message...")
 
         params: List[Optional[str]] = [None]  # msgid
         chunk_buff: List[bytes] = []
 
-        is_exit = False
-
         def should_stop() -> bool:
-            nonlocal is_exit
-            if stop_flag.get() == 1:
-                is_exit = True
-            return is_exit
-
-        def handle_sigint(signal_num, frame):
-            nonlocal is_exit
-            is_exit = True
-
-        signal.signal(signal.SIGINT, handle_sigint)
+            if stop_flag.get() != 0:
+                return True
+            return False
 
         def message_handler(sock: zmq.Socket, chunks: List[bytes]):
             nonlocal chunk_buff, params, transcribe_pub
@@ -124,3 +117,5 @@ class TranscribeService(BaseService):
         # cleanup
         transcribe_pub.close()
         audio_sub.close()
+
+        logger.info("TranscribeService worker end.")

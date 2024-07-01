@@ -1,10 +1,11 @@
+import os
+from typing import List
+
+import numpy as np
+from faster_whisper import WhisperModel
 from sqlalchemy import Column, Integer, LargeBinary, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from typing import List
-import numpy as np
-from faster_whisper import WhisperModel
-import os
 
 # engine = create_engine("sqlite:///:memory:", echo=False)
 engine = create_engine("sqlite:///msgs.db", echo=False)

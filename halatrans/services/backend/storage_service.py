@@ -1,7 +1,7 @@
 import base64
 import json
 import logging
-import signal
+from dataclasses import dataclass
 from multiprocessing.managers import ValueProxy
 from typing import Any, Dict, List, Optional
 
@@ -10,7 +10,7 @@ from sqlalchemy import Column, Integer, LargeBinary, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from halatrans.services.interface import BaseService, ServiceConfig
+from halatrans.services.base_service import BaseService, ServiceConfig
 from halatrans.services.utils import create_sub_socket, poll_messages
 
 logging.basicConfig(level=logging.INFO)
@@ -47,40 +47,35 @@ class DBChatRawChunks(Base):
         return f"<DBChatRawChunks(name={self.msgid})>"
 
 
+@dataclass
+class StorageServiceParameters:
+    transcribe_pub_addr: str
+    translation_pub_addr: str
+
+
 class StorageService(BaseService):
     def __init__(self, config: ServiceConfig):
         super().__init__(config)
 
     @staticmethod
-    def process_worker(
-        stop_flag: ValueProxy[int],
-        pub_addr: Optional[str],
-        addition: Dict[str, Any],
-        *args,
+    def on_worker_process_custom(
+        stop_flag: ValueProxy[int], parameters: Dict[str, Any]
     ):
-        logger.info("Init storage ")
+        config = StorageServiceParameters(**parameters)
+        logger.info(f"StorageService worker start. {config}")
 
         Base.metadata.create_all(engine)
 
         ctx = zmq.Context()
-        rawchunks_sub = create_sub_socket(
-            ctx, addition["transcribe_pub_addr"], "prooftext"
-        )
+        rawchunks_sub = create_sub_socket(ctx, config.transcribe_pub_addr, "prooftext")
         translation_sub = create_sub_socket(
-            ctx, addition["translation_pub_addr"], "translation"
+            ctx, config.translation_pub_addr, "translation"
         )
 
         def should_top() -> bool:
-            nonlocal stop_flag
-            if stop_flag.get() == 1:
+            if stop_flag.get() != 0:
                 return True
             return False
-
-        def handle_sigint(signal_num, frame):
-            nonlocal stop_flag
-            stop_flag.set(1)
-
-        signal.signal(signal.SIGINT, handle_sigint)
 
         def message_handler(sock: zmq.Socket, chunks: List[bytes]):
             for chunk in chunks:
@@ -117,3 +112,5 @@ class StorageService(BaseService):
             #     logger.info(msg)
 
         poll_messages([rawchunks_sub, translation_sub], message_handler, should_top)
+
+        logger.info("StorageService worker end.")

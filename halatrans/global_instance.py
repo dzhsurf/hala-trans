@@ -1,6 +1,7 @@
 import logging
 
-from .services.manager import ServiceManager
+from halatrans.services.backend_manager import BackendServiceManager
+from halatrans.services.frontend_manager import FrontendServiceManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -8,18 +9,20 @@ logger = logging.getLogger(__name__)
 
 class GlobalInstance:
     def __init__(self):
-        self.state = {}
-        self.service_manager = ServiceManager()
+        self.backend_service_manager = BackendServiceManager()
+        self.frontend_service_manager = FrontendServiceManager()
 
     def startup(self):
         logger.info("Global instance startup.")
+        self.frontend_service_manager.start()
 
     def terminate(self):
         logger.info("Global instance terminate.")
-        self.service_manager.terminate()
+        self.backend_service_manager.terminate()
+        self.frontend_service_manager.terminate()
 
-    def get_state(self):
-        return self.state
+    def get_backend_service_manager(self) -> BackendServiceManager:
+        return self.backend_service_manager
 
-    def get_service_manager(self) -> ServiceManager:
-        return self.service_manager
+    def get_frontend_service_manager(self) -> FrontendServiceManager:
+        return self.frontend_service_manager

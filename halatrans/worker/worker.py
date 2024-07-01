@@ -3,7 +3,7 @@ from concurrent.futures import Future, ProcessPoolExecutor
 from multiprocessing.managers import SyncManager, ValueProxy
 from typing import Tuple, Type, TypeVar
 
-from halatrans.services.interface import BaseService
+from halatrans.services.base_service import BaseService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ def process_worker(cls: Type[T], task_id: str, stop_flag: ValueProxy[int], *args
     logger.info(f"[Task: {task_id}] Worker start, cls: {cls}")
     # logger.info(f"All parametes: {args}")
     try:
-        cls.process_worker(stop_flag, *args)
+        cls.process_worker(stop_flag, cls, *args)
     except Exception as err:
         logger.error(err)
     logger.info(f"[Task: {task_id}] Worker end, {cls}")

@@ -2,7 +2,7 @@ import base64
 import json
 import logging
 import os
-import signal
+from dataclasses import dataclass
 from multiprocessing.managers import ValueProxy
 from typing import Any, Dict, List, Optional
 
@@ -10,7 +10,7 @@ import numpy as np
 import zmq
 from faster_whisper import WhisperModel
 
-from halatrans.services.interface import BaseService, ServiceConfig
+from halatrans.services.base_service import BaseService, ServiceConfig
 from halatrans.services.utils import (create_pub_socket, create_sub_socket,
                                       poll_messages)
 
@@ -19,6 +19,12 @@ logger = logging.getLogger(__name__)
 
 INT16_MAX_ABS_VALUE = 32768.0
 MIN_TEXT_LEN = 2
+
+
+@dataclass
+class WhisperServiceParameters:
+    transcribe_pub_addr: str
+    whisper_pub_addr: str
 
 
 def process_faster_whisper_transcribe(
@@ -67,12 +73,12 @@ class WhisperService(BaseService):
         super().__init__(config)
 
     @staticmethod
-    def process_worker(
-        stop_flag: ValueProxy[int],
-        pub_addr: Optional[str],
-        addition: Dict[str, Any],
-        *args,
+    def on_worker_process_custom(
+        stop_flag: ValueProxy[int], parameters: Dict[str, Any]
     ):
+        config = WhisperServiceParameters(**parameters)
+        logger.info(f"WhisperService worker start. {config}")
+
         logger.info("Init faster whisper")
         os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
         model_size = "tiny.en"
@@ -84,35 +90,19 @@ class WhisperService(BaseService):
             num_workers=1,
         )
 
-        logger.info(f"Initial MQ, {addition}")
-
-        condition_keys = ["transcribe_pub_addr", "whisper_pub_addr"]
-        for k in condition_keys:
-            if k not in addition:
-                raise ValueError(f"Key not exist: {k}")
-
+        logger.info("Initial MQ")
         ctx = zmq.Context()
-
-        whisper_pub = create_pub_socket(ctx, addition["whisper_pub_addr"])
+        whisper_pub = create_pub_socket(ctx, config.whisper_pub_addr)
         transcribe_sub = create_sub_socket(
-            ctx, addition["transcribe_pub_addr"], ["prooftext"]
+            ctx, config.transcribe_pub_addr, ["prooftext"]
         )
 
         logger.info("Whisper service start handle message...")
 
-        is_exit = False
-
         def should_stop() -> bool:
-            nonlocal is_exit
-            if stop_flag.get() == 1:
-                is_exit = True
-            return is_exit
-
-        def handle_sigint(signal_num, frame):
-            nonlocal is_exit
-            is_exit = True
-
-        signal.signal(signal.SIGINT, handle_sigint)
+            if stop_flag.get() != 0:
+                return True
+            return False
 
         def messages_handler(sock: zmq.Socket, chunks: List[bytes]):
             for chunk in chunks:
@@ -139,3 +129,5 @@ class WhisperService(BaseService):
         # cleanup
         whisper_pub.close()
         transcribe_sub.close()
+
+        logger.info("WhisperService worker end.")
