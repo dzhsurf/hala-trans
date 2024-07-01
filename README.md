@@ -3,6 +3,11 @@ hala-trans
 
 hala-trans is a Real-Time Speech Translate AI Assistant.
 
+**The project is still in its early development stages. If you are interested in the project, feel free to contact us.**
+
+Architecture
+------------
+
 The architecture of the hala-trans is primarily divided into the following services:
 
 1. **Backend Server:** Uses FastAPI to communicate with subprocesses through IPC Queue and manages subprocesses via ProcessPoolExecutor.
