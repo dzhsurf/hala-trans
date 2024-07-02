@@ -102,11 +102,17 @@ Reference
 ---------
 
 https://asdf-vm.com/
+
 https://docs.anaconda.com/miniconda/miniconda-other-installer-links/
+
 https://python-poetry.org/docs/
+
 https://zeromq.org/
+
 https://github.com/alphacep/vosk-api
+
 https://github.com/SYSTRAN/faster-whisper
+
 https://platform.openai.com/docs/api-reference/introduction
 
 
