@@ -2,41 +2,28 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple  # noqa: F401
 
 from halatrans.services.backend.assistant_service import (
-    AssistantService,
-    AssistantServiceParameters,
-)
-from halatrans.services.backend.rts2t_service import (
-    RTS2TService,
-    RTS2TServiceParameters,
-)
+    AssistantService, AssistantServiceParameters)
+from halatrans.services.backend.rts2t_service import (RTS2TService,
+                                                      RTS2TServiceParameters)
 from halatrans.services.backend.storage_service import (
-    StorageService,
-    StorageServiceParameters,
-)
+    StorageService, StorageServiceParameters)
 from halatrans.services.backend.transcribe_service import (
-    TranscribeService,
-    TranscribeServiceParameters,
-)
+    TranscribeService, TranscribeServiceParameters)
 from halatrans.services.backend.translation_service import (
-    TranslationService,
-    TranslationServiceParameters,
-)
+    TranslationService, TranslationServiceParameters)
 from halatrans.services.backend.whisper_service import (
-    WhisperService,
-    WhisperServiceParameters,
-)
-from halatrans.services.base_service import BaseService, ServiceConfig, ServiceMode
+    WhisperService, WhisperServiceParameters)
+from halatrans.services.base_service import (BaseService, ServiceConfig,
+                                             ServiceMode)
 from halatrans.services.base_service_manager import BaseServiceManager
-from halatrans.services.config import (
-    CONST_ASSISTANT_PUB_ADDR,
-    CONST_AUDIO_STREAM_PUB_ADDR,
-    CONST_AUDIO_STREAM_PUB_TOPIC,
-    CONST_RTS2T_PUB_ADDR,
-    CONST_RTS2T_PUB_TOPIC,
-    CONST_TRANSCRIBE_PUB_ADDR,
-    CONST_TRANSLATION_PUB_ADDR,
-    CONST_WHISPER_PUB_ADDR,
-)
+from halatrans.services.config import (CONST_ASSISTANT_PUB_ADDR,
+                                       CONST_AUDIO_STREAM_PUB_ADDR,
+                                       CONST_AUDIO_STREAM_PUB_TOPIC,
+                                       CONST_RTS2T_PUB_ADDR,
+                                       CONST_RTS2T_PUB_TOPIC,
+                                       CONST_TRANSCRIBE_PUB_ADDR,
+                                       CONST_TRANSLATION_PUB_ADDR,
+                                       CONST_WHISPER_PUB_ADDR)
 from halatrans.services.process_task_manager import ServiceState
 
 logging.basicConfig(level=logging.INFO)

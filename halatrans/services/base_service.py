@@ -10,11 +10,8 @@ from typing import Any, Dict, Generator, Optional, Type, TypeVar
 
 import zmq
 
-from halatrans.services.utils import (
-    create_pub_socket,
-    create_rep_socket,
-    create_req_socket,
-)
+from halatrans.services.utils import (create_pub_socket, create_rep_socket,
+                                      create_req_socket)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -97,8 +94,11 @@ class BaseService(ABC):
         )
         response: Optional[bytes] = await asyncio.gather(request_task)
         return response
-    
+
     def on_worker_process_launched(self, stop_flag: ValueProxy[int]):
+        pass
+
+    def on_terminating(self):
         pass
 
     @staticmethod

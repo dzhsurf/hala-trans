@@ -50,12 +50,6 @@ class BaseServiceManager:
             return self.__service_state__[name]
         return None
 
-    def get_service_msg_queue(self, name: str) -> Optional[queue.Queue]:
-        service = self.get_service(name)
-        if service:
-            return service.get_output_queue()
-        return None
-
     def start(self) -> str:
         if self.is_running:
             return "services are running."

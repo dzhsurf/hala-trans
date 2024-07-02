@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from halatrans.global_instance import GlobalInstance
 from halatrans.model.services import AudioStreamControlRequest, ServiceRequest
+from halatrans.services.backend.rts2t_service import RTS2TService
 from halatrans.services.frontend.audio_stream_service import \
     AudioStreamServiceParameters
 
@@ -54,7 +55,6 @@ async def service_management_query(
     state = "Running" if instance.get_backend_service_manager().is_running else ""
     content = {
         "runningState": state,
-        "deviceName": "DEVICE",  # TODO: get device state
     }
     return JSONResponse(content, status_code=200)
 
@@ -72,37 +72,21 @@ async def service_management_ctrl(
 @app.get("/api/event_stream")
 async def event_stream(instance: GlobalInstance = Depends(get_global_instance)):
     async def poll_queue():
-        # inside
-        # async def receive_data():
-        #    while True: ...
-        #        await receive(block, timeout=0.2) ...
-        #        queueu.put(...) # have size limit
-
-        # task = asyncio.create_task(receive_data())
-        # await asyncio.gather(task)
-
-        # rts2t = instance.get_backend_service_manager().get_service('rts2t')
-        # while True:
-        #   chunks = await rts2t.batch_recv(timeout=0.2)
-        #   for chunk in chunks:
-        #       yield chunk
-
-        q = instance.get_backend_service_manager().get_service_msg_queue("rts2t")
         while True:
-            if (
-                instance.get_backend_service_manager().is_terminating
-                or instance.get_backend_service_manager().is_stopping
-                or instance.get_backend_service_manager().is_exit
-            ):
+            if not instance.get_backend_service_manager().is_running:
                 break
             item = None
-            if q is None:
-                q = instance.get_backend_service_manager().get_service_msg_queue(
-                    "rts2t"
-                )
+            service = instance.get_backend_service_manager().get_service("rts2t-main")
+            if service is None:
+                # service not started
+                yield f"data: {json.dumps({"item": None})}\n\n"
+                await asyncio.sleep(1)
+                continue
             else:
+                # service is runnning
                 try:
-                    chunk = q.get(block=False)
+                    result_queue = service.get_output_msg_queue()
+                    chunk = result_queue.get(block=False)
                     item = json.loads(chunk)
                 except queue.Empty:
                     pass
@@ -114,8 +98,10 @@ async def event_stream(instance: GlobalInstance = Depends(get_global_instance)):
                     msg = {"item": item}
             else:
                 msg = {"item": item}
+            # wait more time if no msg recv
+            wait_time = 0.5 if item is None else 0.1
             yield f"data: {json.dumps(msg)}\n\n"
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(wait_time)
 
     return StreamingResponse(poll_queue(), media_type="text/event-stream")
 

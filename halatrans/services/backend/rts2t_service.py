@@ -1,18 +1,21 @@
 import asyncio
 import logging
+import queue
+import threading
 from dataclasses import dataclass
 from multiprocessing.managers import ValueProxy
 from typing import Any, Dict, List, Optional
 
-import threading
-import queue
 import zmq
 
 from halatrans.services.base_service import BaseService, ServiceConfig
-from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
+from halatrans.services.utils import (create_pub_socket, create_sub_socket,
+                                      poll_messages)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+OUTPUT_QUEUE_SIZE_LIMIT = 10000
 
 
 @dataclass
@@ -28,24 +31,36 @@ class RTS2TServiceParameters:
 class RTS2TService(BaseService):
     def __init__(self, config: ServiceConfig):
         super().__init__(config)
+        self.__output_queue__ = queue.Queue(maxsize=OUTPUT_QUEUE_SIZE_LIMIT)
+        self.__output_msg_thread__: Optional[threading.Thread] = None
 
     def __init_output_msg_thread__(self, stop_flag: ValueProxy[int]):
         config = RTS2TServiceParameters(**self.config.parameters)
-
-        output_queue = queue.Queue()
-        self.output_msg_thread = threading.Thread(
-            target=self.__output_msg_thread__,
-            args=(stop_flag, output_queue, config),
+        self.__output_msg_thread__ = threading.Thread(
+            target=self.__output_msg_thread_func__,
+            args=(stop_flag, self.__output_queue__, config),
         )
-        self.output_msg_thread.daemon = True
-        self.output_msg_thread.start()
+        self.__output_msg_thread__.daemon = True
+        self.__output_msg_thread__.start()
+
+    def __wait_for_output_msg_thread_exit__(self):
+        if self.__output_msg_thread__ is None:
+            return
+        self.__output_msg_thread__.join()
+
+    def get_output_msg_queue(self) -> queue.Queue:
+        return self.__output_queue__
 
     def on_worker_process_launched(self, stop_flag: ValueProxy[int]):
         super().on_worker_process_launched(stop_flag)
         self.__init_output_msg_thread__(stop_flag)
 
+    def on_terminating(self):
+        super().on_terminating()
+        self.__wait_for_output_msg_thread_exit__()
+
     @staticmethod
-    async def thread_task_handler(
+    async def __thread_task_handler__(
         stop_flag: ValueProxy[int],
         output_queue: queue.Queue,
         config: RTS2TServiceParameters,
@@ -74,16 +89,18 @@ class RTS2TService(BaseService):
         logger.info("RTS2TService output msg thread end.")
 
     @staticmethod
-    async def thread_main(output_queue: queue.Queue, config: RTS2TServiceParameters):
+    async def __thread_main__(
+        output_queue: queue.Queue, config: RTS2TServiceParameters
+    ):
         task = asyncio.create_task(
-            RTS2TService.thread_task_handler(output_queue, config)
+            RTS2TService.__thread_task_handler__(output_queue, config)
         )
         await asyncio.gather(task)
 
-    def __output_msg_thread__(
+    def __output_msg_thread_func__(
         self, output_queue: queue.Queue, config: RTS2TServiceParameters
     ):
-        asyncio.run(RTS2TService.thread_main(output_queue, config))
+        asyncio.run(RTS2TService.__thread_main__(output_queue, config))
 
     @staticmethod
     def on_worker_process_custom(
