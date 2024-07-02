@@ -81,6 +81,7 @@ async def event_stream(instance: GlobalInstance = Depends(get_global_instance)):
             )
             if service is None:
                 # service not started
+                # logger.info("service is empty.")
                 yield f"data: {json.dumps({'item': None})}\n\n"
                 await asyncio.sleep(1)
                 continue
@@ -101,6 +102,7 @@ async def event_stream(instance: GlobalInstance = Depends(get_global_instance)):
             else:
                 msg = {"item": item}
             # wait more time if no msg recv
+            # logger.info(f"item: {item}")
             wait_time = 0.5 if item is None else 0.1
             yield f"data: {json.dumps(msg)}\n\n"
             await asyncio.sleep(wait_time)

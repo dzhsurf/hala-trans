@@ -9,8 +9,7 @@ from typing import Any, Dict, List, Optional
 import zmq
 
 from halatrans.services.base_service import CustomService, ServiceConfig
-from halatrans.services.utils import (create_pub_socket, create_sub_socket,
-                                      poll_messages)
+from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -69,7 +68,7 @@ class RTS2TService(CustomService):
         output_queue: queue.Queue,
         config: RTS2TServiceParameters,
     ):
-        logger.info("RTS2TService output msg thread start.")
+        logger.info(f"RTS2TService output msg thread start. {config}")
         ctx = zmq.Context()
         try:
             output_sub = create_sub_socket(
@@ -94,17 +93,22 @@ class RTS2TService(CustomService):
 
     @staticmethod
     async def __thread_main__(
-        output_queue: queue.Queue, config: RTS2TServiceParameters
+        stop_flag: ValueProxy[int],
+        output_queue: queue.Queue,
+        config: RTS2TServiceParameters,
     ):
         task = asyncio.create_task(
-            RTS2TService.__thread_task_handler__(output_queue, config)
+            RTS2TService.__thread_task_handler__(stop_flag, output_queue, config)
         )
         await asyncio.gather(task)
 
     def __output_msg_thread_func__(
-        self, output_queue: queue.Queue, config: RTS2TServiceParameters
+        self,
+        stop_flag: ValueProxy[int],
+        output_queue: queue.Queue,
+        config: RTS2TServiceParameters,
     ):
-        asyncio.run(RTS2TService.__thread_main__(output_queue, config))
+        asyncio.run(RTS2TService.__thread_main__(stop_flag, output_queue, config))
 
     @staticmethod
     def on_worker_process_custom(
