@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
-        await get_global_instance().terminate()
+        instance.terminate()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -119,7 +119,8 @@ async def devices_query(instance: GlobalInstance = Depends(get_global_instance))
         }
     )
     resp = await audio_device.request(input)
-    return JSONResponse(json.loads(resp), status_code=200)
+    logger.info(resp)
+    return JSONResponse({}, status_code=200)
 
 
 @app.post("/api/record")

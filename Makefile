@@ -18,7 +18,7 @@ install: ## Install dependencies.
 	poetry install
 
 runDev: ## Local run in development env.
-	cd halatrans && uvicorn web:app --reload
+	cd halatrans && uvicorn web:app
 
 runProd: ## Local run in production env.
 	cd halatrans && gunicorn -c gunicorn_config.py web:app

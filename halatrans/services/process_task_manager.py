@@ -1,10 +1,9 @@
+import concurrent
 import logging
 import multiprocessing
 from concurrent.futures import Future, ProcessPoolExecutor
 from multiprocessing.managers import ValueProxy
 from typing import Dict, Tuple
-
-from fastapi import concurrency
 
 from halatrans.services.base_service import BaseService
 from halatrans.worker import worker
@@ -58,7 +57,7 @@ class ProcessTaskManager:
                 futures.append(future)
         logger.info(f"Stop all tasks, task count: {len(futures)}")
         self.future_dict = {}
-        concurrency.futures.wait(futures)
+        concurrent.futures.wait(futures)
 
     def terminate(self):
         self.stop_all_tasks()

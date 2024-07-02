@@ -89,9 +89,13 @@ class BaseService(ABC):
         parameters: Dict[str, Any],
     ):
         # set worker process SIGINT
+        original_sigint_handler = signal.getsignal(signal.SIGINT)
+
         def handle_sigint(signal_num, frame):
             logger.error("handle sigint!!! set stop flag.")
             stop_flag.set(1)
+            if original_sigint_handler:
+                original_sigint_handler(signal_num, frame)
 
         signal.signal(signal.SIGINT, handle_sigint)
 

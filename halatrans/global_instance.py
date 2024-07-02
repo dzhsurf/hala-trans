@@ -1,7 +1,7 @@
 import logging
 
-from halatrans.services.backend_manager import BackendServiceManager
-from halatrans.services.frontend_manager import FrontendServiceManager
+from halatrans.services.service_backend_manager import BackendServiceManager
+from halatrans.services.service_frontend_manager import FrontendServiceManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

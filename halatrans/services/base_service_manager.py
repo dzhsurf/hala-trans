@@ -19,12 +19,15 @@ class BaseServiceManager:
         self.is_running = False
         self.is_exit = False
 
+        self.__original_sigint_handler__ = signal.getsignal(signal.SIGINT)
         signal.signal(signal.SIGINT, self.__on_handle_sigint__)
 
-    def __on_handle_sigint__(self):
+    def __on_handle_sigint__(self, signal_num, frame):
         logger.info("on handle sigint!!!")
         self.terminate()
         self.is_exit = True
+        if self.__original_sigint_handler__:
+            self.__original_sigint_handler__(signal_num, frame)
 
     def __submit_task__(self, service: BaseService):
         config = service.get_config()
