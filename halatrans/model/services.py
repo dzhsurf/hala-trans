@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -7,4 +9,4 @@ class ServiceRequest(BaseModel):
 
 class AudioStreamControlRequest(BaseModel):
     cmd: str
-    deviceIndex: int
+    deviceIndex: Optional[int]

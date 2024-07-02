@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 ServiceState = Dict[str, BaseService]
+ServiceTaskIdDict = Dict[str, str]
 TaskStateType = Tuple[Future, ValueProxy[int]]
 
 
@@ -41,12 +42,17 @@ class ProcessTaskManager:
         logger.info(f"submit task {task_id}")
         return task_id
 
-    # def cancel_task(self, task_id: str):
-    #     if task_id in self.future_dict:
-    #         future, stop_flag = self.future_dict.pop(task_id, None)
-    #         if future:
-    #             stop_flag.set(1)
-    #             concurrent.futures.wait([future])
+    def cancel_task(self, task_id: str):
+        if task_id in self.future_dict:
+            logger.info("Canceling task: {task_id}")
+            future, stop_flag = self.future_dict.pop(task_id, None)
+            if future:
+                logger.info("Set stop flag for task and wait for finish. {task_id}")
+                stop_flag.set(1)
+                concurrent.futures.wait([future])
+                logger.info("Task finish. {task_id}")
+        else:
+            logger.info(f"Task not exist. {task_id}")
 
     def stop_all_tasks(self):
         futures = []

@@ -10,11 +10,8 @@ from typing import Any, Dict, Generator, List, Optional, Type, TypeVar
 
 import zmq
 
-from halatrans.services.utils import (
-    create_pub_socket,
-    create_rep_socket,
-    create_req_socket,
-)
+from halatrans.services.utils import (create_pub_socket, create_rep_socket,
+                                      create_req_socket)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
