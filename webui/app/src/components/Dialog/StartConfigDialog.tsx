@@ -139,7 +139,7 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={onDismiss}>Dismiss</Button>
-                    <Button onClick={onLaunch}>Launch</Button>
+                    <Button onClick={onLaunch}>Start</Button>
                 </DialogActions>
             </Dialog>
         </Fragment>
