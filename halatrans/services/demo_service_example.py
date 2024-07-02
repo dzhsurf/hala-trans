@@ -2,12 +2,10 @@ import logging
 from multiprocessing.managers import ValueProxy
 from typing import Any, Dict, Generator, Optional
 
-from halatrans.services.base_service import (
-    CustomService,
-    PublishSubscribeService,
-    RequestResponseService,
-    ServiceConfig,
-)
+from halatrans.services.base_service import (CustomService,
+                                             PublishSubscribeService,
+                                             RequestResponseService,
+                                             ServiceConfig)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

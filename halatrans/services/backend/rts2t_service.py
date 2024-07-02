@@ -23,9 +23,13 @@ class RTS2TServiceParameters:
     output_pub_addr: str
     output_pub_topic: str
     transcribe_pub_addr: str
+    transcribe_pub_partial_topic: str
     whisper_pub_addr: str
+    whisper_pub_topic: str
     translation_pub_addr: str
+    translation_pub_topic: str
     assistant_pub_addr: str
+    assistant_pub_topic: str
 
 
 class RTS2TService(CustomService):
@@ -118,23 +122,29 @@ class RTS2TService(CustomService):
         # port = addr.split(":")[-1]
 
         transcribe_sub = create_sub_socket(
-            ctx, config.transcribe_pub_addr, ["transcribe"]
+            ctx, config.transcribe_pub_addr, [config.transcribe_pub_partial_topic]
         )
-        whisper_sub = create_sub_socket(ctx, config.whisper_pub_addr, ["transcribe"])
+        whisper_sub = create_sub_socket(
+            ctx, config.whisper_pub_addr, [config.whisper_pub_topic]
+        )
         translation_sub = create_sub_socket(
-            ctx, config.translation_pub_addr, ["translation"]
+            ctx, config.translation_pub_addr, [config.translation_pub_topic]
         )
-        assistant_sub = create_sub_socket(ctx, config.assistant_pub_addr, ["assistant"])
+        assistant_sub = create_sub_socket(
+            ctx, config.assistant_pub_addr, [config.assistant_pub_topic]
+        )
 
         def should_stop() -> bool:
             if stop_flag.get() != 0:
                 return True
             return False
 
+        bytes_topic = bytes(config.output_pub_topic, encoding="utf-8")
+
         def message_handler(sock: zmq.Socket, chunks: List[bytes]):
-            nonlocal output_pub
+            nonlocal output_pub, bytes_topic
             for chunk in chunks:
-                output_pub.send_multipart([b"rts2t", chunk])
+                output_pub.send_multipart([bytes_topic, chunk])
 
         poll_messages(
             [
@@ -153,5 +163,6 @@ class RTS2TService(CustomService):
         whisper_sub.close()
         translation_sub.close()
         output_pub.close()
+        ctx.term()
 
         logger.info("RTS2TService worker end.")

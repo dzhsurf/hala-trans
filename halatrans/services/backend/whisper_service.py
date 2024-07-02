@@ -24,7 +24,9 @@ MIN_TEXT_LEN = 2
 @dataclass
 class WhisperServiceParameters:
     transcribe_pub_addr: str
+    transcribe_pub_fulltext_topic: str
     whisper_pub_addr: str
+    whisper_pub_topic: str
 
 
 def process_faster_whisper_transcribe(
@@ -32,6 +34,7 @@ def process_faster_whisper_transcribe(
     msgid: str,
     frame_buffer: List[np.ndarray],
     whisper_pub: zmq.Socket,
+    whisper_pub_topic: bytes,
 ):
     if len(frame_buffer) == 0:
         return
@@ -65,7 +68,7 @@ def process_faster_whisper_transcribe(
             "text": fulltext,
         }
         msg_body = bytes(json.dumps(item), encoding="utf-8")
-        whisper_pub.send_multipart([b"transcribe", msg_body])
+        whisper_pub.send_multipart([whisper_pub_topic, msg_body])
 
 
 class WhisperService(CustomService):
@@ -94,7 +97,7 @@ class WhisperService(CustomService):
         ctx = zmq.Context()
         whisper_pub = create_pub_socket(ctx, config.whisper_pub_addr)
         transcribe_sub = create_sub_socket(
-            ctx, config.transcribe_pub_addr, ["prooftext"]
+            ctx, config.transcribe_pub_addr, [config.transcribe_pub_fulltext_topic]
         )
 
         logger.info("Whisper service start handle message...")
@@ -103,6 +106,8 @@ class WhisperService(CustomService):
             if stop_flag.get() != 0:
                 return True
             return False
+
+        whisper_pub_topic = bytes(config.whisper_pub_topic, encoding="utf-8")
 
         def messages_handler(sock: zmq.Socket, chunks: List[bytes]):
             for chunk in chunks:
@@ -122,6 +127,7 @@ class WhisperService(CustomService):
                     msgid=msgid,
                     frame_buffer=frame_buffer,
                     whisper_pub=whisper_pub,
+                    whisper_pub_topic=whisper_pub_topic,
                 )
 
         poll_messages([transcribe_sub], messages_handler, should_stop)
@@ -129,5 +135,6 @@ class WhisperService(CustomService):
         # cleanup
         whisper_pub.close()
         transcribe_sub.close()
+        ctx.term()
 
         logger.info("WhisperService worker end.")

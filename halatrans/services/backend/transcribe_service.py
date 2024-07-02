@@ -24,6 +24,8 @@ class TranscribeServiceParameters:
     audio_pub_addr: str
     audio_pub_topic: str
     transcribe_pub_addr: str
+    transcribe_pub_partial_topic: str
+    transcribe_pub_fulltext_topic: str
 
 
 class TranscribeService(CustomService):
@@ -66,6 +68,9 @@ class TranscribeService(CustomService):
                 return True
             return False
 
+        partial_topic = bytes(config.transcribe_pub_partial_topic, encoding="utf-8")
+        fulltext_topic = bytes(config.transcribe_pub_fulltext_topic, encoding="utf-8")
+
         def message_handler(sock: zmq.Socket, chunks: List[bytes]):
             nonlocal chunk_buff, params, transcribe_pub
 
@@ -93,7 +98,7 @@ class TranscribeService(CustomService):
                     }
 
                     msg_body = bytes(json.dumps(item), encoding="utf-8")
-                    transcribe_pub.send_multipart([b"prooftext", msg_body])
+                    transcribe_pub.send_multipart([fulltext_topic, msg_body])
 
                     # reset
                     chunk_buff.clear()
@@ -110,7 +115,7 @@ class TranscribeService(CustomService):
                             "text": text,
                         }
                         msg_body = bytes(json.dumps(item), encoding="utf-8")
-                        transcribe_pub.send_multipart([b"transcribe", msg_body])
+                        transcribe_pub.send_multipart([partial_topic, msg_body])
 
         poll_messages([audio_sub], message_handler, should_stop)
 

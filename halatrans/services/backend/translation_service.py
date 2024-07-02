@@ -22,8 +22,11 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TranslationServiceParameters:
     transcribe_pub_addr: str
+    transcribe_pub_partial_topic: str
     whisper_pub_addr: str
+    whisper_pub_topic: str
     translation_pub_addr: str
+    translation_pub_topic: str
 
 
 prompt_sample_ask = """Translate below English texts into Chinese.
@@ -140,9 +143,12 @@ def openai_translate_thread(input_queue: queue.Queue, output_queue: queue.Queue)
             time.sleep(0.1)
 
 
-def translation_pub_thread(input_queue: queue.Queue, translation_pub_addr: str):
+def translation_pub_thread(
+    input_queue: queue.Queue, translation_pub_addr: str, translation_pub_topic: str
+):
     ctx = zmq.Context()
     translation_pub = create_pub_socket(ctx, translation_pub_addr)
+    bytes_topic = bytes(translation_pub_topic, encoding="utf-8")
 
     while True:
         chunk: Optional[str] = None
@@ -155,12 +161,13 @@ def translation_pub_thread(input_queue: queue.Queue, translation_pub_addr: str):
             if chunk == "STOP":
                 break
             translation_pub.send_multipart(
-                [b"translation", bytes(chunk, encoding="utf-8")]
+                [bytes_topic, bytes(chunk, encoding="utf-8")]
             )
         else:
             time.sleep(0.1)
     # cleanup
     translation_pub.close()
+    ctx.term()
 
 
 class TranslationService(CustomService):
@@ -175,9 +182,11 @@ class TranslationService(CustomService):
         logger.info(f"TranslationService worker start. {config}")
 
         ctx = zmq.Context()
-        whisper_sub = create_sub_socket(ctx, config.whisper_pub_addr, ["transcribe"])
+        whisper_sub = create_sub_socket(
+            ctx, config.whisper_pub_addr, [config.whisper_pub_topic]
+        )
         transcribe_sub = create_sub_socket(
-            ctx, config.transcribe_pub_addr, ["transcribe"]
+            ctx, config.transcribe_pub_addr, [config.transcribe_pub_partial_topic]
         )
 
         # start openai thread
@@ -200,6 +209,7 @@ class TranslationService(CustomService):
             args=(
                 output_queue,
                 config.translation_pub_addr,
+                config.translation_pub_topic,
             ),
         )
         pub_thread.daemon = True
@@ -230,5 +240,6 @@ class TranslationService(CustomService):
 
         whisper_sub.close()
         transcribe_sub.close()
+        ctx.term()
 
         logger.info("TranslationService worker end.")

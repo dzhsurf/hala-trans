@@ -50,7 +50,9 @@ class DBChatRawChunks(Base):
 @dataclass
 class StorageServiceParameters:
     transcribe_pub_addr: str
+    transcribe_pub_fulltext_topic: str
     translation_pub_addr: str
+    translation_pub_topic: str
 
 
 class StorageService(CustomService):
@@ -67,9 +69,11 @@ class StorageService(CustomService):
         Base.metadata.create_all(engine)
 
         ctx = zmq.Context()
-        rawchunks_sub = create_sub_socket(ctx, config.transcribe_pub_addr, "prooftext")
+        rawchunks_sub = create_sub_socket(
+            ctx, config.transcribe_pub_addr, [config.transcribe_pub_fulltext_topic]
+        )
         translation_sub = create_sub_socket(
-            ctx, config.translation_pub_addr, "translation"
+            ctx, config.translation_pub_addr, [config.translation_pub_topic]
         )
 
         def should_top() -> bool:
@@ -112,5 +116,10 @@ class StorageService(CustomService):
             #     logger.info(msg)
 
         poll_messages([rawchunks_sub, translation_sub], message_handler, should_top)
+
+        # cleanup
+        rawchunks_sub.close()
+        translation_sub.close()
+        ctx.term()
 
         logger.info("StorageService worker end.")

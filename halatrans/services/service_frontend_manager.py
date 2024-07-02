@@ -4,21 +4,15 @@ from typing import Dict
 
 from halatrans.services.base_service import BaseService, ServiceConfig
 from halatrans.services.base_service_manager import BaseServiceManager
-from halatrans.services.config import (
-    CONST_AUDIO_DEVICE_REP_ADDR,
-    CONST_AUDIO_DEVICE_SERVICE,
-    CONST_AUDIO_STREAM_PUB_ADDR,
-    CONST_AUDIO_STREAM_PUB_TOPIC,
-    CONST_AUDIO_STREAM_SERVICE,
-)
+from halatrans.services.config import (CONST_AUDIO_DEVICE_REP_ADDR,
+                                       CONST_AUDIO_DEVICE_SERVICE,
+                                       CONST_AUDIO_STREAM_PUB_ADDR,
+                                       CONST_AUDIO_STREAM_PUB_TOPIC,
+                                       CONST_AUDIO_STREAM_SERVICE)
 from halatrans.services.frontend.audio_device_service import (
-    AudioDeviceService,
-    AudioDeviceServiceParameters,
-)
+    AudioDeviceService, AudioDeviceServiceParameters)
 from halatrans.services.frontend.audio_stream_service import (
-    AudioStreamService,
-    AudioStreamServiceParameters,
-)
+    AudioStreamService, AudioStreamServiceParameters)
 from halatrans.services.process_task_manager import ServiceState
 
 logging.basicConfig(level=logging.INFO)

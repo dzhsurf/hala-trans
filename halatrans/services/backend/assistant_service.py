@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AssistantServiceParameters:
     whisper_pub_addr: str
+    whisper_pub_topic: str
     assistant_pub_addr: str
+    assistant_pub_topic: str
 
 
 def openai_chat_completions(client: OpenAI, text: str) -> str:
@@ -50,7 +52,12 @@ def openai_chat_completions(client: OpenAI, text: str) -> str:
 
 
 # Do not use long sentence, response in short.
-def process_openai_assistant(client: OpenAI, pub: zmq.Socket, all_messages: List[str]):
+def process_openai_assistant(
+    client: OpenAI,
+    pub: zmq.Socket,
+    topic: bytes,
+    all_messages: List[str],
+):
     user_prompt = """Below is the interviewer's speech transcription during an interview process. 
 Ignore small talk and non-technical information questions, and extract the questions asked by the interviewer.
 And format the output as JSON. For example here is the output: { questions: ["Why are you interested in the position in Lyft?", "Talk about your work experiences."] } 
@@ -73,7 +80,7 @@ If there're no questions in the context, response: { questions: [] }
             "text": content,
         },
     }
-    pub.send_multipart([b"assistant", bytes(json.dumps(item), encoding="utf-8")])
+    pub.send_multipart([topic, bytes(json.dumps(item), encoding="utf-8")])
 
 
 class AssistantService(CustomService):
@@ -88,7 +95,9 @@ class AssistantService(CustomService):
         logger.info(f"AssistantService worker start. {config}")
 
         ctx = zmq.Context()
-        whisper_sub = create_sub_socket(ctx, config.whisper_pub_addr, ["transcribe"])
+        whisper_sub = create_sub_socket(
+            ctx, config.whisper_pub_addr, [config.whisper_pub_topic]
+        )
         assistant_pub = create_pub_socket(ctx, config.assistant_pub_addr)
 
         api_key = os.getenv("OPENAI_API_KEY", "")
@@ -101,8 +110,10 @@ class AssistantService(CustomService):
 
         all_messages: List[str] = []
 
+        assistant_pub_topic = bytes(config.assistant_pub_topic, encoding="utf-8")
+
         def message_handler(sock: zmq.Socket, chunks: List[bytes]):
-            nonlocal all_messages, assistant_pub
+            nonlocal all_messages, assistant_pub, assistant_pub_topic
             if len(chunks) == 0:
                 return
 
@@ -117,10 +128,15 @@ class AssistantService(CustomService):
             SHIFT_WINDOW_SIZE = 5
             if len(all_messages) > SHIFT_WINDOW_SIZE:
                 process_openai_assistant(
-                    client, assistant_pub, all_messages[-SHIFT_WINDOW_SIZE:]
+                    client,
+                    assistant_pub,
+                    assistant_pub_topic,
+                    all_messages[-SHIFT_WINDOW_SIZE:],
                 )
             else:
-                process_openai_assistant(client, assistant_pub, all_messages)
+                process_openai_assistant(
+                    client, assistant_pub, assistant_pub_topic, all_messages
+                )
 
         poll_messages([whisper_sub], message_handler, should_top)
 
