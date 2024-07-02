@@ -49,6 +49,7 @@ Communication between subprocesses is achieved using ZeroMQ's PUB/SUB pattern. E
 
 ![Architecture](./docs/architecture.png)
 
+![BaseService](./docs/base_service_design.png)
 
 Requirements
 ------------
