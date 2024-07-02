@@ -98,19 +98,23 @@ npm run start
 
 
 
-# Reference
+Reference
+---------
 
 https://asdf-vm.com/
-
 https://docs.anaconda.com/miniconda/miniconda-other-installer-links/
-
 https://python-poetry.org/docs/
-
 https://zeromq.org/
-
 https://github.com/alphacep/vosk-api
-
 https://github.com/SYSTRAN/faster-whisper
-
 https://platform.openai.com/docs/api-reference/introduction
 
+
+Contribution
+------------
+
+Contributions are always welcome!
+
+License
+-------
+Whisper's code and model weights are released under the MIT License. See [LICENSE](https://github.com/dzhsurf/hala-trans/blob/main/LICENSE) for further details.
