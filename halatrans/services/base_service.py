@@ -10,8 +10,11 @@ from typing import Any, Dict, Generator, List, Optional, Type, TypeVar
 
 import zmq
 
-from halatrans.services.utils import (create_pub_socket, create_rep_socket,
-                                      create_req_socket)
+from halatrans.services.utils import (
+    create_pub_socket,
+    create_rep_socket,
+    create_req_socket,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -46,6 +49,10 @@ class BaseService(ABC):
         return self.config
 
     @abstractmethod
+    def get_mode(self) -> ServiceMode:
+        pass
+
+    @abstractmethod
     def on_worker_process_launched(self, stop_flag: ValueProxy[int]):
         pass
 
@@ -53,28 +60,14 @@ class BaseService(ABC):
     def on_terminating(self):
         pass
 
-    @abstractmethod
-    def get_mode(self) -> ServiceMode:
-        pass
-
     @staticmethod
     @abstractmethod
-    def on_worker_process_response(
-        parameters: Dict[str, Any], topic: str, chunk: bytes
-    ) -> Optional[bytes]:
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def on_worker_process_publisher(
+    async def on_worker_process_begin(
+        stop_flag: ValueProxy[int],
+        cls: Type[ServiceT],
+        addr: Optional[str],
+        topic: Optional[str],
         parameters: Dict[str, Any],
-    ) -> Generator[bytes, Optional[str], None]:
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def on_worker_process_custom(
-        stop_flag: ValueProxy[int], parameters: Dict[str, Any]
     ):
         pass
 
@@ -87,7 +80,7 @@ class BaseService(ABC):
         topic: Optional[str],
         parameters: Dict[str, Any],
     ):
-        # set worker process SIGINT
+        # setup worker process SIGINT
         original_sigint_handler = signal.getsignal(signal.SIGINT)
 
         def handle_sigint(signal_num, frame):
@@ -98,22 +91,10 @@ class BaseService(ABC):
 
         signal.signal(signal.SIGINT, handle_sigint)
 
-        if mode == ServiceMode.REQREP:
-            asyncio.run(
-                RequestResponseService.__reqrep_worker_main__(
-                    stop_flag, cls, addr, parameters
-                )
-            )
-        elif mode == ServiceMode.PUBSUB:
-            asyncio.run(
-                PublishSubscribeService.__pubsub_worker_main__(
-                    stop_flag, cls, addr, topic, parameters
-                )
-            )
-        elif mode == ServiceMode.CUSTOM:
-            asyncio.run(
-                CustomService.__custom_worker_main__(stop_flag, cls, parameters)
-            )
+        # start worker logic
+        asyncio.run(
+            cls.on_worker_process_begin(stop_flag, cls, addr, topic, parameters)
+        )
 
 
 class BaseServiceImpl(BaseService):
@@ -181,20 +162,6 @@ class RequestResponseService(BaseServiceImpl):
         responses: List[Optional[bytes]] = await asyncio.gather(request_task)
         return responses[0]
 
-    @staticmethod
-    def on_worker_process_publisher(
-        parameters: Dict[str, Any],
-    ) -> Generator[bytes, Optional[str], None]:
-        # Do nothing
-        pass
-
-    @staticmethod
-    def on_worker_process_custom(
-        stop_flag: ValueProxy[int], parameters: Dict[str, Any]
-    ):
-        # Do nothing
-        pass
-
     def __init_reqrep_server__(self):
         if self.config.addr is None:
             raise ValueError("Config addr is None")
@@ -203,10 +170,11 @@ class RequestResponseService(BaseServiceImpl):
         logger.info(f"initial REQREP server, unique topic: {self.unique_topic}")
 
     @staticmethod
-    async def __reqrep_worker_main__(
+    async def on_worker_process_begin(
         stop_flag: ValueProxy[int],
         cls: Type[ServiceT],
-        addr: str,
+        addr: Optional[str],
+        topic: Optional[str],
         parameters: Dict[str, Any],
     ):
         logger.info("REQREP worker start...")
@@ -266,20 +234,6 @@ class PublishSubscribeService(BaseServiceImpl):
     def get_mode(self) -> ServiceMode:
         return ServiceMode.PUBSUB
 
-    @staticmethod
-    def on_worker_process_response(
-        parameters: Dict[str, Any], topic: str, chunk: bytes
-    ) -> Optional[bytes]:
-        # Do nothing
-        pass
-
-    @staticmethod
-    def on_worker_process_custom(
-        stop_flag: ValueProxy[int], parameters: Dict[str, Any]
-    ):
-        # Do nothing
-        pass
-
     def __init_pubsub_server__(self):
         if self.config.addr is None or self.config.topic is None:
             raise ValueError(f"Config not correct. {self.config}")
@@ -288,11 +242,11 @@ class PublishSubscribeService(BaseServiceImpl):
         logger.info(f"initial PUBSUB server, unique topic: {self.unique_topic}")
 
     @staticmethod
-    async def __pubsub_worker_main__(
+    async def on_worker_process_begin(
         stop_flag: ValueProxy[int],
         cls: Type[ServiceT],
-        addr: str,
-        topic: str,
+        addr: Optional[str],
+        topic: Optional[str],
         parameters: Dict[str, Any],
     ):
         logger.info("PUBSUB worker start...")
@@ -335,27 +289,15 @@ class CustomService(BaseServiceImpl):
     def get_mode(self) -> ServiceMode:
         return ServiceMode.CUSTOM
 
-    @staticmethod
-    def on_worker_process_response(
-        parameters: Dict[str, Any], topic: str, chunk: bytes
-    ) -> Optional[bytes]:
-        # Do nothing
-        pass
-
-    @staticmethod
-    def on_worker_process_publisher(
-        parameters: Dict[str, Any],
-    ) -> Generator[bytes, Optional[str], None]:
-        # Do nothing
-        pass
-
     def __init_custom_server__(self):
         pass
 
     @staticmethod
-    async def __custom_worker_main__(
+    async def on_worker_process_begin(
         stop_flag: ValueProxy[int],
         cls: Type[ServiceT],
+        addr: Optional[str],
+        topic: Optional[str],
         parameters: Dict[str, Any],
     ):
         logger.info("CUSTOM worker start...")
