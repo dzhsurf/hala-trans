@@ -38,6 +38,13 @@ class ServiceConfig:
 # port = addr.split(":")[-1]
 
 ServiceT = TypeVar("ServiceT", bound="BaseService")
+RequestResponseServiceT = TypeVar(
+    "RequestResponseServiceT", bound="RequestResponseService"
+)
+PublishSubscribeServiceT = TypeVar(
+    "PublishSubscribeServiceT", bound="PublishSubscribeService"
+)
+CustomServiceT = TypeVar("CustomServiceT", bound="CustomService")
 
 
 class BaseService(ABC):
@@ -170,6 +177,13 @@ class RequestResponseService(BaseServiceImpl):
         logger.info(f"initial REQREP server, unique topic: {self.unique_topic}")
 
     @staticmethod
+    @abstractmethod
+    def on_worker_process_response(
+        parameters: Dict[str, Any], topic: str, chunk: bytes
+    ) -> Optional[bytes]:
+        pass
+
+    @staticmethod
     async def on_worker_process_begin(
         stop_flag: ValueProxy[int],
         cls: Type[ServiceT],
@@ -177,6 +191,9 @@ class RequestResponseService(BaseServiceImpl):
         topic: Optional[str],
         parameters: Dict[str, Any],
     ):
+        if not issubclass(cls, RequestResponseService):
+            raise ValueError(f"Class is not subclass of RequestResponseService, {cls}")
+
         logger.info("REQREP worker start...")
         response_task = asyncio.create_task(
             RequestResponseService.__reqrep_worker_response_handler__(
@@ -189,7 +206,7 @@ class RequestResponseService(BaseServiceImpl):
     @staticmethod
     async def __reqrep_worker_response_handler__(
         stop_flag: ValueProxy[int],
-        cls: Type[ServiceT],
+        cls: Type[RequestResponseServiceT],
         addr: str,
         parameters: Dict[str, Any],
     ):
@@ -242,6 +259,13 @@ class PublishSubscribeService(BaseServiceImpl):
         logger.info(f"initial PUBSUB server, unique topic: {self.unique_topic}")
 
     @staticmethod
+    @abstractmethod
+    def on_worker_process_publisher(
+        parameters: Dict[str, Any],
+    ) -> Generator[bytes, Optional[str], None]:
+        pass
+
+    @staticmethod
     async def on_worker_process_begin(
         stop_flag: ValueProxy[int],
         cls: Type[ServiceT],
@@ -249,6 +273,9 @@ class PublishSubscribeService(BaseServiceImpl):
         topic: Optional[str],
         parameters: Dict[str, Any],
     ):
+        if not issubclass(cls, PublishSubscribeService):
+            raise ValueError(f"Class is not subclass of PublishSubscribeService, {cls}")
+
         logger.info("PUBSUB worker start...")
         handler_task = asyncio.create_task(
             PublishSubscribeService.__pubsub_worker_handler__(
@@ -261,7 +288,7 @@ class PublishSubscribeService(BaseServiceImpl):
     @staticmethod
     async def __pubsub_worker_handler__(
         stop_flag: ValueProxy[int],
-        cls: Type[ServiceT],
+        cls: Type[PublishSubscribeServiceT],
         addr: str,
         topic: str,
         parameters: Dict[str, Any],
@@ -293,6 +320,13 @@ class CustomService(BaseServiceImpl):
         pass
 
     @staticmethod
+    @abstractmethod
+    def on_worker_process_custom(
+        stop_flag: ValueProxy[int], parameters: Dict[str, Any]
+    ):
+        pass
+
+    @staticmethod
     async def on_worker_process_begin(
         stop_flag: ValueProxy[int],
         cls: Type[ServiceT],
@@ -300,6 +334,9 @@ class CustomService(BaseServiceImpl):
         topic: Optional[str],
         parameters: Dict[str, Any],
     ):
+        if not issubclass(cls, CustomService):
+            raise ValueError(f"Class is not subclass of CustomService, {cls}")
+
         logger.info("CUSTOM worker start...")
         handler_task = asyncio.create_task(
             CustomService.__custom_worker_handler__(stop_flag, cls, parameters)
@@ -310,7 +347,7 @@ class CustomService(BaseServiceImpl):
     @staticmethod
     async def __custom_worker_handler__(
         stop_flag: ValueProxy[int],
-        cls: Type[ServiceT],
+        cls: Type[CustomServiceT],
         parameters: Dict[str, Any],
     ):
         cls.on_worker_process_custom(stop_flag, parameters)
