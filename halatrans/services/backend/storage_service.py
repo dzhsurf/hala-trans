@@ -81,45 +81,49 @@ class StorageService(CustomService):
                 return True
             return False
 
-        def message_handler(sock: zmq.Socket, chunks: List[bytes]):
-            for chunk in chunks:
-                data = json.loads(chunk)
-                msgid = data["msgid"]
-                status = data["status"]
-                if status == "translate" and "translation" in data:
-                    text = data["text"]
-                    translation = data["translation"]
-                    newMsg = DBChatMessage(
-                        msgid=msgid,
-                        text=text,
-                        translation=translation,
-                    )
-                    session.add(newMsg)
-                elif status == "fulltext" and "chunks" in data:
-                    # is from rawchunks_sub
-                    b64_chunks = data["chunks"]
-                    rawbytes = b"".join(
-                        [
-                            base64.b64decode(b64ecoded_text)
-                            for b64ecoded_text in b64_chunks
-                        ]
-                    )
-                    newData = DBChatRawChunks(
-                        msgid=msgid,
-                        data=rawbytes,
-                    )
-                    session.add(newData)
+        try:
 
-            session.commit()
-            # msgs = session.query(DBChatMessage).all()
-            # for msg in msgs:
-            #     logger.info(msg)
+            def message_handler(sock: zmq.Socket, chunks: List[bytes]):
+                for chunk in chunks:
+                    data = json.loads(chunk)
+                    msgid = data["msgid"]
+                    status = data["status"]
+                    if status == "translate" and "translation" in data:
+                        text = data["text"]
+                        translation = data["translation"]
+                        newMsg = DBChatMessage(
+                            msgid=msgid,
+                            text=text,
+                            translation=translation,
+                        )
+                        session.add(newMsg)
+                    elif status == "fulltext" and "chunks" in data:
+                        # is from rawchunks_sub
+                        b64_chunks = data["chunks"]
+                        rawbytes = b"".join(
+                            [
+                                base64.b64decode(b64ecoded_text)
+                                for b64ecoded_text in b64_chunks
+                            ]
+                        )
+                        newData = DBChatRawChunks(
+                            msgid=msgid,
+                            data=rawbytes,
+                        )
+                        session.add(newData)
 
-        poll_messages([rawchunks_sub, translation_sub], message_handler, should_top)
+                session.commit()
+                # msgs = session.query(DBChatMessage).all()
+                # for msg in msgs:
+                #     logger.info(msg)
 
-        # cleanup
-        rawchunks_sub.close()
-        translation_sub.close()
-        ctx.term()
+            poll_messages([rawchunks_sub, translation_sub], message_handler, should_top)
+        except Exception as err:
+            logger.error(err)
+        finally:
+            # cleanup
+            rawchunks_sub.close()
+            translation_sub.close()
+            ctx.term()
 
         logger.info("StorageService worker end.")

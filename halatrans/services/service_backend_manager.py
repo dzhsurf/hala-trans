@@ -40,6 +40,7 @@ class BackendServiceManager(BaseServiceManager):
         super().__init__()
 
     def on_terminate(self):
+        # TODO: must control sub services shutdown order.
         return super().on_terminate()
 
     def on_prepare_start(self) -> ServiceState:

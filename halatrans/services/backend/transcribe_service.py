@@ -71,58 +71,62 @@ class TranscribeService(CustomService):
         partial_topic = bytes(config.transcribe_pub_partial_topic, encoding="utf-8")
         fulltext_topic = bytes(config.transcribe_pub_fulltext_topic, encoding="utf-8")
 
-        def message_handler(sock: zmq.Socket, chunks: List[bytes]):
-            nonlocal chunk_buff, params, transcribe_pub
+        try:
 
-            if params[0] is None:
-                # TODO: gen id, and add ts to item
-                ts = int(datetime.timestamp(datetime.now()))
-                params[0] = f"msgid-{ts}"
+            def message_handler(sock: zmq.Socket, chunks: List[bytes]):
+                nonlocal chunk_buff, params, transcribe_pub
 
-            # batch handle chunks
-            for chunk in chunks:
-                if recognizer.AcceptWaveform(chunk):
-                    recognizer.Reset()
-                    # TODO: use faster-whisper instead
-                    # res = json.loads(self.recognizer.Result())
-                    # text = res["text"]
+                if params[0] is None:
+                    # TODO: gen id, and add ts to item
+                    ts = int(datetime.timestamp(datetime.now()))
+                    params[0] = f"msgid-{ts}"
 
-                    # output
-                    item = {
-                        "msgid": params[0],
-                        "status": "fulltext",
-                        "chunks": [
-                            base64.b64encode(item).decode("utf-8")
-                            for item in chunk_buff
-                        ],
-                    }
+                # batch handle chunks
+                for chunk in chunks:
+                    if recognizer.AcceptWaveform(chunk):
+                        recognizer.Reset()
+                        # TODO: use faster-whisper instead
+                        # res = json.loads(self.recognizer.Result())
+                        # text = res["text"]
 
-                    msg_body = bytes(json.dumps(item), encoding="utf-8")
-                    transcribe_pub.send_multipart([fulltext_topic, msg_body])
-
-                    # reset
-                    chunk_buff.clear()
-                    params[0] = None
-                else:
-                    res = json.loads(recognizer.PartialResult())
-                    text = res["partial"]
-                    if len(text) > 2:
-                        chunk_buff.append(chunk)
-
+                        # output
                         item = {
                             "msgid": params[0],
-                            "status": "partial",
-                            "text": text,
+                            "status": "fulltext",
+                            "chunks": [
+                                base64.b64encode(item).decode("utf-8")
+                                for item in chunk_buff
+                            ],
                         }
 
                         msg_body = bytes(json.dumps(item), encoding="utf-8")
-                        transcribe_pub.send_multipart([partial_topic, msg_body])
+                        transcribe_pub.send_multipart([fulltext_topic, msg_body])
 
-        poll_messages([audio_sub], message_handler, should_stop)
+                        # reset
+                        chunk_buff.clear()
+                        params[0] = None
+                    else:
+                        res = json.loads(recognizer.PartialResult())
+                        text = res["partial"]
+                        if len(text) > 2:
+                            chunk_buff.append(chunk)
 
-        # cleanup
-        transcribe_pub.close()
-        audio_sub.close()
-        ctx.term()
+                            item = {
+                                "msgid": params[0],
+                                "status": "partial",
+                                "text": text,
+                            }
+
+                            msg_body = bytes(json.dumps(item), encoding="utf-8")
+                            transcribe_pub.send_multipart([partial_topic, msg_body])
+
+            poll_messages([audio_sub], message_handler, should_stop)
+        except Exception as err:
+            logger.error(err)
+        finally:
+            # cleanup
+            transcribe_pub.close()
+            audio_sub.close()
+            ctx.term()
 
         logger.info("TranscribeService worker end.")

@@ -9,8 +9,7 @@ import zmq
 from openai import OpenAI
 
 from halatrans.services.base_service import CustomService, ServiceConfig
-from halatrans.services.utils import (create_pub_socket, create_sub_socket,
-                                      poll_messages)
+from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -112,32 +111,40 @@ class AssistantService(CustomService):
 
         assistant_pub_topic = bytes(config.assistant_pub_topic, encoding="utf-8")
 
-        def message_handler(sock: zmq.Socket, chunks: List[bytes]):
-            nonlocal all_messages, assistant_pub, assistant_pub_topic
-            if len(chunks) == 0:
-                return
+        try:
 
-            for chunk in chunks:
-                item = json.loads(chunk)
-                # msgid = item["msgid"]
-                # status = item["status"]
-                text = item["text"]
-                all_messages.append(text)
+            def message_handler(sock: zmq.Socket, chunks: List[bytes]):
+                nonlocal all_messages, assistant_pub, assistant_pub_topic
+                if len(chunks) == 0:
+                    return
 
-            # need update
-            SHIFT_WINDOW_SIZE = 5
-            if len(all_messages) > SHIFT_WINDOW_SIZE:
-                process_openai_assistant(
-                    client,
-                    assistant_pub,
-                    assistant_pub_topic,
-                    all_messages[-SHIFT_WINDOW_SIZE:],
-                )
-            else:
-                process_openai_assistant(
-                    client, assistant_pub, assistant_pub_topic, all_messages
-                )
+                for chunk in chunks:
+                    item = json.loads(chunk)
+                    # msgid = item["msgid"]
+                    # status = item["status"]
+                    text = item["text"]
+                    all_messages.append(text)
 
-        poll_messages([whisper_sub], message_handler, should_top)
+                # need update
+                SHIFT_WINDOW_SIZE = 5
+                if len(all_messages) > SHIFT_WINDOW_SIZE:
+                    process_openai_assistant(
+                        client,
+                        assistant_pub,
+                        assistant_pub_topic,
+                        all_messages[-SHIFT_WINDOW_SIZE:],
+                    )
+                else:
+                    process_openai_assistant(
+                        client, assistant_pub, assistant_pub_topic, all_messages
+                    )
+
+            poll_messages([whisper_sub], message_handler, should_top)
+        except Exception as err:
+            logger.error(err)
+        finally:
+            assistant_pub.close()
+            whisper_sub.close()
+            ctx.term()
 
         logger.info("AssistantService worker end.")

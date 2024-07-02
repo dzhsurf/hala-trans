@@ -38,6 +38,9 @@ class RTS2TService(CustomService):
         self.__output_msg_thread__: Optional[threading.Thread] = None
 
     def __init_output_msg_thread__(self, stop_flag: ValueProxy[int]):
+        if self.__output_msg_thread__ is not None:
+            raise ValueError("output msg thread already exist.")
+
         config = RTS2TServiceParameters(**self.config.parameters)
         self.__output_msg_thread__ = threading.Thread(
             target=self.__output_msg_thread_func__,
@@ -50,6 +53,7 @@ class RTS2TService(CustomService):
         if self.__output_msg_thread__ is None:
             return
         self.__output_msg_thread__.join()
+        self.__output_msg_thread__ = None
 
     def get_output_msg_queue(self) -> queue.Queue:
         return self.__output_queue__
@@ -70,10 +74,10 @@ class RTS2TService(CustomService):
     ):
         logger.info(f"RTS2TService output msg thread start. {config}")
         ctx = zmq.Context()
+        output_sub = create_sub_socket(
+            ctx, config.output_pub_addr, [config.output_pub_topic]
+        )
         try:
-            output_sub = create_sub_socket(
-                ctx, config.output_pub_addr, [config.output_pub_topic]
-            )
 
             def should_stop() -> bool:
                 if stop_flag.get() != 0:
@@ -88,7 +92,9 @@ class RTS2TService(CustomService):
         except Exception as err:
             logger.error(err)
         finally:
+            output_sub.close()
             ctx.term()
+
         logger.info("RTS2TService output msg thread end.")
 
     @staticmethod

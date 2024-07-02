@@ -12,8 +12,7 @@ import zmq
 from openai import OpenAI
 
 from halatrans.services.base_service import CustomService, ServiceConfig
-from halatrans.services.utils import (create_pub_socket, create_sub_socket,
-                                      poll_messages)
+from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -81,7 +80,11 @@ def openai_translate_text(client: OpenAI, text: str) -> str:
     return "[Unknow Format] " + content
 
 
-def openai_translate_thread(input_queue: queue.Queue, output_queue: queue.Queue):
+def openai_translate_thread(
+    stop_flag: ValueProxy[int],
+    input_queue: queue.Queue,
+    output_queue: queue.Queue,
+):
     api_key = os.getenv("OPENAI_API_KEY", "")
     if len(api_key) == 0:
         logging.error("OpenAI: API_KEY is empty.")
@@ -91,6 +94,9 @@ def openai_translate_thread(input_queue: queue.Queue, output_queue: queue.Queue)
     last_partial_translate = 0
 
     while True:
+        if stop_flag.get() != 0:
+            break
+
         chunk: Optional[bytes] = None
         try:
             chunk = input_queue.get(block=False)
@@ -98,10 +104,6 @@ def openai_translate_thread(input_queue: queue.Queue, output_queue: queue.Queue)
             pass
 
         if chunk:
-            if str(chunk, encoding="utf-8") == "STOP":
-                output_queue.put("STOP")
-                break
-
             item = json.loads(chunk)
             msgid = item["msgid"]
             status = item["status"]
@@ -144,13 +146,19 @@ def openai_translate_thread(input_queue: queue.Queue, output_queue: queue.Queue)
 
 
 def translation_pub_thread(
-    input_queue: queue.Queue, translation_pub_addr: str, translation_pub_topic: str
+    stop_flag: ValueProxy[int],
+    input_queue: queue.Queue,
+    translation_pub_addr: str,
+    translation_pub_topic: str,
 ):
     ctx = zmq.Context()
     translation_pub = create_pub_socket(ctx, translation_pub_addr)
     bytes_topic = bytes(translation_pub_topic, encoding="utf-8")
 
     while True:
+        if stop_flag.get() != 0:
+            break
+
         chunk: Optional[str] = None
         try:
             chunk = input_queue.get(block=False)
@@ -158,8 +166,6 @@ def translation_pub_thread(
             pass
 
         if chunk:
-            if chunk == "STOP":
-                break
             translation_pub.send_multipart(
                 [bytes_topic, bytes(chunk, encoding="utf-8")]
             )
@@ -196,6 +202,7 @@ class TranslationService(CustomService):
         openai_thread = threading.Thread(
             target=openai_translate_thread,
             args=(
+                stop_flag,
                 input_queue,
                 output_queue,
             ),
@@ -207,6 +214,7 @@ class TranslationService(CustomService):
         pub_thread = threading.Thread(
             target=translation_pub_thread,
             args=(
+                stop_flag,
                 output_queue,
                 config.translation_pub_addr,
                 config.translation_pub_topic,
@@ -222,24 +230,26 @@ class TranslationService(CustomService):
                 return True
             return False
 
-        def messages_handler(sock: zmq.Socket, chunks: List[bytes]):
-            nonlocal input_queue
+        try:
 
-            for chunk in chunks:
-                # item = json.loads(chunk)
-                # msgid = item["msgid"]
-                # text = item["text"]
-                input_queue.put(chunk)
+            def messages_handler(sock: zmq.Socket, chunks: List[bytes]):
+                nonlocal input_queue
+                for chunk in chunks:
+                    # item = json.loads(chunk)
+                    # msgid = item["msgid"]
+                    # text = item["text"]
+                    input_queue.put(chunk)
 
-        poll_messages([whisper_sub, transcribe_sub], messages_handler, should_stop)
+            poll_messages([whisper_sub, transcribe_sub], messages_handler, should_stop)
+        except Exception as err:
+            logger.error(err)
+        finally:
+            # cleanup
+            openai_thread.join()
+            pub_thread.join()
 
-        # cleanup
-        input_queue.put(bytes("STOP", encoding="utf-8"))
-        openai_thread.join()
-        pub_thread.join()
-
-        whisper_sub.close()
-        transcribe_sub.close()
-        ctx.term()
+            whisper_sub.close()
+            transcribe_sub.close()
+            ctx.term()
 
         logger.info("TranslationService worker end.")

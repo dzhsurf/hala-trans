@@ -11,8 +11,7 @@ import zmq
 from faster_whisper import WhisperModel
 
 from halatrans.services.base_service import CustomService, ServiceConfig
-from halatrans.services.utils import (create_pub_socket, create_sub_socket,
-                                      poll_messages)
+from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -109,32 +108,36 @@ class WhisperService(CustomService):
 
         whisper_pub_topic = bytes(config.whisper_pub_topic, encoding="utf-8")
 
-        def messages_handler(sock: zmq.Socket, chunks: List[bytes]):
-            for chunk in chunks:
-                item = json.loads(chunk)
-                msgid = item["msgid"]
-                b64_chunks = item["chunks"]
-                frame_buffer: List[np.ndarray] = []
-                for b64ecoded_text in b64_chunks:
-                    chunk_bytes = base64.b64decode(b64ecoded_text)
+        try:
 
-                    frame = np.frombuffer(chunk_bytes, dtype=np.int16)
-                    audio_array = frame.astype(np.float32) / INT16_MAX_ABS_VALUE
-                    frame_buffer.append(audio_array)
-                # use faster whisper to transcribe audio to text
-                process_faster_whisper_transcribe(
-                    faster_whipser=faster_whipser,
-                    msgid=msgid,
-                    frame_buffer=frame_buffer,
-                    whisper_pub=whisper_pub,
-                    whisper_pub_topic=whisper_pub_topic,
-                )
+            def messages_handler(sock: zmq.Socket, chunks: List[bytes]):
+                for chunk in chunks:
+                    item = json.loads(chunk)
+                    msgid = item["msgid"]
+                    b64_chunks = item["chunks"]
+                    frame_buffer: List[np.ndarray] = []
+                    for b64ecoded_text in b64_chunks:
+                        chunk_bytes = base64.b64decode(b64ecoded_text)
 
-        poll_messages([transcribe_sub], messages_handler, should_stop)
+                        frame = np.frombuffer(chunk_bytes, dtype=np.int16)
+                        audio_array = frame.astype(np.float32) / INT16_MAX_ABS_VALUE
+                        frame_buffer.append(audio_array)
+                    # use faster whisper to transcribe audio to text
+                    process_faster_whisper_transcribe(
+                        faster_whipser=faster_whipser,
+                        msgid=msgid,
+                        frame_buffer=frame_buffer,
+                        whisper_pub=whisper_pub,
+                        whisper_pub_topic=whisper_pub_topic,
+                    )
 
-        # cleanup
-        whisper_pub.close()
-        transcribe_sub.close()
-        ctx.term()
+            poll_messages([transcribe_sub], messages_handler, should_stop)
+        except Exception as err:
+            logger.error(err)
+        finally:
+            # cleanup
+            whisper_pub.close()
+            transcribe_sub.close()
+            ctx.term()
 
         logger.info("WhisperService worker end.")
