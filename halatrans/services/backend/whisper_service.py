@@ -11,7 +11,8 @@ import zmq
 from faster_whisper import WhisperModel
 
 from halatrans.services.base_service import CustomService, ServiceConfig
-from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
+from halatrans.services.utils import (create_pub_socket, create_sub_socket,
+                                      poll_messages)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

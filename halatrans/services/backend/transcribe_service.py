@@ -2,7 +2,6 @@ import base64
 import json
 import logging
 from dataclasses import dataclass
-
 # from dataclasses import dataclass
 from datetime import datetime
 from multiprocessing.managers import ValueProxy
@@ -13,7 +12,8 @@ import zmq
 from vosk import KaldiRecognizer
 
 from halatrans.services.base_service import CustomService, ServiceConfig
-from halatrans.services.utils import create_pub_socket, create_sub_socket, poll_messages
+from halatrans.services.utils import (create_pub_socket, create_sub_socket,
+                                      poll_messages)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
