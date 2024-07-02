@@ -34,12 +34,11 @@ export const send_command = async (cmd: string): Promise<string> => {
 export interface ServiceStateType {
     error?: any
     runningState: "" | "Running"
-    deviceName: string 
 };
 
 export const queryServiceState = async (): Promise<ServiceStateType> => {
     try {
-        const response = await fetch("http://localhost:8000/internal/services");
+        const response = await fetch("http://localhost:8000/api/service_management");
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -51,8 +50,62 @@ export const queryServiceState = async (): Promise<ServiceStateType> => {
         return {
             error: error,
             runningState: "",
-            deviceName: "NOT SELECTED",
         };
+    }
+};
+
+export class AudioDeviceItem {
+    name: string;
+    index?: number;
+
+    constructor(name: string, index?: number) {
+        this.name = name;
+        if (index !== undefined) {
+            this.index = index;
+        }
+    }
+
+    static fromRecord(record: Record<string, string>): AudioDeviceItem[] {
+        const devices = Object.entries(record).map(
+            ([key, value]) => new AudioDeviceItem(value, Number(key))
+        );
+        return devices.sort((a, b) => {
+            if (a.index === undefined) {
+                return 1;
+            }
+            if (b.index === undefined) {
+                return -1;
+            }
+            return (a.index ?? 0) - (b.index ?? 0);
+        });
+    }
+};
+
+export class AudioDeviceResponse {
+    itemRecords: AudioDeviceItem[]
+    error?: any
+
+    constructor(itemRecords: AudioDeviceItem[], err?: any) {
+        this.itemRecords = itemRecords;
+        if (err !== undefined) {
+            this.error = err;
+        }
+    }
+};
+
+export const queryAudioDeviceList = async (): Promise<AudioDeviceResponse> => {
+    try {
+        const response = await fetch("http://localhost:8000/api/devices");
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const responseData = await response.json() as Record<string, string>;
+        const ret = new AudioDeviceResponse(AudioDeviceItem.fromRecord(responseData), undefined);
+        console.log('Success: ', ret);
+        return ret;
+    } catch (error) {
+        console.error('Error:', error);
+        return new AudioDeviceResponse([], error);
     }
 };
 

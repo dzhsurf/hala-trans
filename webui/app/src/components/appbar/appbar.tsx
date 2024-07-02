@@ -9,8 +9,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import { queryServiceState, send_command } from '../../services/api';
-import AudioDevicePicker from '../AudioDevicePicker/AudioDevicePicker';
+import { queryAudioDeviceList, queryServiceState, send_command } from '../../services/api';
 import StartConfigDialogComponent from '../Dialog/StartConfigDialog';
 
 type ServiceStateType = "" | "Running";
@@ -28,11 +27,11 @@ export default function MyAppBar() {
     const [open, setOpen] = React.useState(false);
 
     const onStartButtonClick = useCallback(async (): Promise<void> => {
-        const ret = await send_command("start");
-        // setOpen(true);
+        // const ret = await send_command("start");
+        setOpen(true);
         // console.log('---------');
         // return;
-        // const ret: string = "";
+        const ret: string = "";
         if (ret === "ok") {
             setServiceState("Running");
         } else {
@@ -55,28 +54,32 @@ export default function MyAppBar() {
         }
         fetched.current = true;
 
-        const updateDeviceInfo = (deviceInfo: IDeviceInfo) => {
-            setDeviceInfo(() => {
-                return deviceInfo;
-            });
-        };
+        // const updateDeviceInfo = (deviceInfo: IDeviceInfo) => {
+        //     setDeviceInfo(() => {
+        //         return deviceInfo;
+        //     });
+        // };
+
+        // const fetchDeviceInfo = async () => {
+        //     const audioDeviceResponse = await queryAudioDeviceList();
+        //     console.log(audioDeviceResponse);
+        //     // updateDeviceInfo({
+        //     //     name: "",
+        //     //     index: 0, // TODO: use state.deviceIndex
+        //     // });
+        // };
 
         const fetchServiceState = async (): Promise<void> => {
-
             const state = await queryServiceState();
             setServiceState(state.runningState);
-            updateDeviceInfo({
-                name: state.deviceName,
-                index: 0, // TODO: use state.deviceIndex
-            });
             const waitTime = 5000 + ((state.error) ? 10000 : 0);
-
             setTimeout(async () => {
                 await fetchServiceState();
             }, waitTime);
         };
 
         fetchServiceState();
+        // fetchDeviceInfo();
     }, []);
 
     return (
@@ -104,7 +107,7 @@ export default function MyAppBar() {
                     >
                         {deviceInfo && deviceInfo.name}
                         {!deviceInfo &&
-                            'SELECT DEVICE'
+                            'DEVICE'
                         }
                     </Button>
                     <Button

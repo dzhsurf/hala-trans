@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { Fragment, SetStateAction, useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog, { DialogProps } from '@mui/material/Dialog';
@@ -13,17 +13,38 @@ import MenuItem from '@mui/material/MenuItem';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Switch from '@mui/material/Switch';
 import PropTypes from 'prop-types';
+import { AudioDeviceItem, AudioDeviceResponse, queryAudioDeviceList, queryServiceState, ServiceStateType } from '../../services/api';
 
 interface StartConfigDialogProps extends DialogProps {
     // custom props
 };
 
+const defaultDeviceValue = 'AUTO';
+const defaultDeviceInfoOption = new AudioDeviceItem(defaultDeviceValue);
+
 const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
-    const [maxWidth, setMaxWidth] = React.useState<DialogProps['maxWidth']>('sm');
-    // const [open, setOpen] = React.useState(prop.open);
+    const [maxWidth, setMaxWidth] = useState<DialogProps['maxWidth']>('sm');
+    // const [open, setOpen] = useState(prop.open);
+    const fetched = useRef(false);
+    const [device, setDevice] = useState(defaultDeviceValue);
+    const handleDeviceChange = (event: { target: { value: SetStateAction<string>; }; }) => {
+        setDevice(event.target.value);
+    };
+
+    const [deviceList, setDeviceList] = useState<AudioDeviceItem[]>([defaultDeviceInfoOption]);
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+        queryAudioDeviceList().then((result: AudioDeviceResponse) => {
+            console.log(result.itemRecords);
+            setDeviceList([defaultDeviceInfoOption, ...result.itemRecords]);
+        });
+    }, [open]);
 
     return (
-        <React.Fragment>
+        <Fragment>
             <Dialog
                 fullWidth={true}
                 maxWidth={maxWidth}
@@ -33,7 +54,7 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
                 <DialogTitle>Start RTS2T Service</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        You can set my maximum width and whether to adapt or not.
+                        You can set service config here.
                     </DialogContentText>
                     <Box
                         noValidate
@@ -45,24 +66,26 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
                             width: 'fit-content',
                         }}
                     >
-                        <FormControl sx={{ mt: 2, minWidth: 120 }}>
-                            <InputLabel htmlFor="max-width">maxWidth</InputLabel>
+                        <FormControl sx={{
+                            mt: 2,
+                            minWidth: 180,
+                            width: 'auto',
+                            whiteSpace: 'nowrap',
+                        }}>
+                            <InputLabel htmlFor="device-index">Device</InputLabel>
                             <Select
                                 autoFocus
-                                value={maxWidth}
-                                // onChange={handleMaxWidthChange}
-                                label="maxWidth"
+                                value={device}
+                                onChange={handleDeviceChange}
+                                label="Device"
                                 inputProps={{
-                                    name: 'max-width',
-                                    id: 'max-width',
+                                    name: 'device-index',
+                                    id: 'device-index',
                                 }}
                             >
-                                <MenuItem value={false as any}>false</MenuItem>
-                                <MenuItem value="xs">xs</MenuItem>
-                                <MenuItem value="sm">sm</MenuItem>
-                                <MenuItem value="md">md</MenuItem>
-                                <MenuItem value="lg">lg</MenuItem>
-                                <MenuItem value="xl">xl</MenuItem>
+                                {deviceList.map((device, index) => (
+                                    <MenuItem value={device.name}>{device.name}</MenuItem>
+                                ))}
                             </Select>
                         </FormControl>
                         {/* <FormControlLabel
@@ -78,7 +101,7 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
                     {/* <Button onClick={onClose}>Close</Button> */}
                 </DialogActions>
             </Dialog>
-        </React.Fragment>
+        </Fragment>
     );
 };
 
