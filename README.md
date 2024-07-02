@@ -81,8 +81,7 @@ Install & Run Background Service
 # if you're using conda, use conda create -n myproj python=3.11 to obtain python 3.11 environment
 
 poetry install
-
-make run
+make runDev
 
 ```
 
