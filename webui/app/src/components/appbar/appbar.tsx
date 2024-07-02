@@ -8,19 +8,13 @@ import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
-import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import { backend_send_command, queryServiceState } from '../../services/api';
 import StartConfigDialogComponent from '../Dialog/StartConfigDialog';
+import AudioDeviceStatusButton from '../../fetures/audioDeviceStatus/AudioDeviceStatusButton';
 
 type ServiceStateType = "" | "Running";
 
-interface IDeviceInfo {
-    name: string
-    index: number
-};
-
 export default function MyAppBar() {
-    const [deviceInfo, setDeviceInfo] = useState<IDeviceInfo | null>(null);
     const [serviceState, setServiceState] = useState<ServiceStateType>("");
     const fetched = useRef(false);
 
@@ -74,17 +68,7 @@ export default function MyAppBar() {
                     <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                         Realtime Translate Assistant
                     </Typography>
-                    <Button
-
-                        size="medium"
-                        startIcon={<VolumeUpIcon></VolumeUpIcon>}
-                        color="inherit"
-                    >
-                        {deviceInfo && deviceInfo.name}
-                        {!deviceInfo &&
-                            'DEVICE'
-                        }
-                    </Button>
+                    <AudioDeviceStatusButton />
                     <Button
                         disabled={serviceState === "" ? false : true}
                         size="medium"

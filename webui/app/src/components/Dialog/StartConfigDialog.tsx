@@ -12,8 +12,9 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Switch from '@mui/material/Switch';
-import PropTypes from 'prop-types';
 import { AudioDeviceItem, AudioDeviceResponse, queryAudioDeviceList, queryServiceState, backend_send_command, ServiceStateType, frontend_record_service } from '../../services/api';
+import { useDispatch } from 'react-redux';
+import changeDevice from '../../fetures/audioDeviceStatus/audioDeviceStatusAction';
 
 interface StartConfigDialogProps extends DialogProps {
     // custom props
@@ -26,12 +27,14 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
     const [maxWidth, setMaxWidth] = useState<DialogProps['maxWidth']>('sm');
     // const [open, setOpen] = useState(prop.open);
     const fetched = useRef(false);
+    const dispatch = useDispatch();
 
     const [device, setDevice] = useState(defaultDeviceValue);
     const [deviceList, setDeviceList] = useState<AudioDeviceItem[]>([defaultDeviceInfoOption]);
 
     const handleDeviceChange = (event: { target: { value: SetStateAction<string>; }; }) => {
         setDevice(event.target.value);
+        changeDevice(dispatch, event.target.value.toString());
     };
 
     const onLaunch = useCallback(() => {
