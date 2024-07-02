@@ -76,7 +76,9 @@ async def event_stream(instance: GlobalInstance = Depends(get_global_instance)):
             if not instance.get_backend_service_manager().is_running:
                 break
             item = None
-            service = instance.get_backend_service_manager().get_service("rts2t-main")
+            service: RTS2TService = instance.get_backend_service_manager().get_service(
+                "rts2t-main"
+            )
             if service is None:
                 # service not started
                 yield f"data: {json.dumps({'item': None})}\n\n"
