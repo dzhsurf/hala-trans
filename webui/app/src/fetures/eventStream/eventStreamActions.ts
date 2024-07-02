@@ -51,9 +51,7 @@ export const startEventStream = createAsyncThunk<
                         };
 
                     // const stream = await initiateDataStream(controller);
-                    await connectDataStreamingServer<StreamingEventItem>(
-                        "http://localhost:8000/api/streaming",
-                        controller,
+                    await connectDataStreamingServer<StreamingEventItem>(controller,
                         onReceiveDataCallback,
                         onErrorCallback);
 

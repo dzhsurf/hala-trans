@@ -13,7 +13,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Switch from '@mui/material/Switch';
 import PropTypes from 'prop-types';
-import { AudioDeviceItem, AudioDeviceResponse, queryAudioDeviceList, queryServiceState, ServiceStateType } from '../../services/api';
+import { AudioDeviceItem, AudioDeviceResponse, queryAudioDeviceList, queryServiceState, backend_send_command, ServiceStateType, frontend_record_service } from '../../services/api';
 
 interface StartConfigDialogProps extends DialogProps {
     // custom props
@@ -42,6 +42,18 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
         } else {
             console.log("launch with config: " + deviceList[selectedIndex].name + " idx: " + deviceList[selectedIndex].index);
         }
+        // first, start backend service
+        // seconds, start front service
+        // TODO: ui loading for service launching.
+        backend_send_command("start").then(async (msg) => {
+            console.log("backend send command finished. " + msg);
+            const param = {
+                'cmd': 'start',
+                'deviceIndex': deviceList[selectedIndex].index,
+            };
+            console.log("frontend record service params: " + param);
+            await frontend_record_service(param.cmd, param.deviceIndex);
+        });
     }, [device]);
     const onDismiss = useCallback(() => {
     }, []);

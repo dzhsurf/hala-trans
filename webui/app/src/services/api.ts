@@ -1,15 +1,15 @@
 // import axios from 'axios';
 
-const serverURL = "http://localhost:8000/internal/services";
+const serverURL = "http://localhost:8000";
 
-export const send_command = async (cmd: string): Promise<string> => {
+export const backend_send_command = async (cmd: string): Promise<string> => {
     try {
 
         const postData = {
             "cmd": cmd,
         }
 
-        const response = await fetch(serverURL,
+        const response = await fetch(serverURL + "/api/service_management",
             {
                 method: 'POST',
                 headers: {
@@ -31,6 +31,39 @@ export const send_command = async (cmd: string): Promise<string> => {
     }
 }
 
+
+// ===== /api/record 
+
+export const frontend_record_service = async (cmd: string, index?: number): Promise<void> => {
+    try {
+
+        const postData = {
+            "cmd": cmd,
+            "deviceIndex": index,
+        }
+
+        const response = await fetch(serverURL + "/api/record",
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(postData),
+            }
+        );
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const responseData = await response.json();
+        console.log('Success: ', responseData);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+};
+
+// ===== /api/service_management
+
 export interface ServiceStateType {
     error?: any
     runningState: "" | "Running"
@@ -38,7 +71,7 @@ export interface ServiceStateType {
 
 export const queryServiceState = async (): Promise<ServiceStateType> => {
     try {
-        const response = await fetch("http://localhost:8000/api/service_management");
+        const response = await fetch(serverURL + "/api/service_management");
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -53,6 +86,9 @@ export const queryServiceState = async (): Promise<ServiceStateType> => {
         };
     }
 };
+
+
+// ===== /api/devices
 
 export class AudioDeviceItem {
     name: string;
@@ -95,7 +131,7 @@ export class AudioDeviceResponse {
 
 export const queryAudioDeviceList = async (): Promise<AudioDeviceResponse> => {
     try {
-        const response = await fetch("http://localhost:8000/api/devices");
+        const response = await fetch(serverURL + "/api/devices");
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -109,10 +145,12 @@ export const queryAudioDeviceList = async (): Promise<AudioDeviceResponse> => {
     }
 };
 
+// =============== /api/event-stream
+
 export type OnErrorCallback = (error: any) => boolean | null;
 export type OnReceiveDataCallback<T> = (data: T) => boolean | null;
 
-async function connectDataStreamingServer<T>(serverURL: string,
+async function connectDataStreamingServer<T>(
     abortController: AbortController,
     callback: OnReceiveDataCallback<T>,
     onError: OnErrorCallback): Promise<void> {
@@ -122,7 +160,7 @@ async function connectDataStreamingServer<T>(serverURL: string,
     while (!signal.aborted) {
         try {
 
-            const response = await fetch(serverURL);
+            const response = await fetch(serverURL + "/api/event_stream");
             const reader = response.body!.getReader();
             const decoder = new TextDecoder('utf-8');
 
@@ -147,7 +185,7 @@ async function connectDataStreamingServer<T>(serverURL: string,
                     }
 
                     const chunk = chunks[i].substring(6);
-                    // console.log(chunk);
+                    console.log(chunk);
                     const data: T = JSON.parse(chunk);
                     if (callback && callback(data)) {
                         abortController.abort("STOP");

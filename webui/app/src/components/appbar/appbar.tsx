@@ -9,7 +9,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import { queryAudioDeviceList, queryServiceState, send_command } from '../../services/api';
+import { backend_send_command, queryServiceState } from '../../services/api';
 import StartConfigDialogComponent from '../Dialog/StartConfigDialog';
 
 type ServiceStateType = "" | "Running";
@@ -27,20 +27,11 @@ export default function MyAppBar() {
     const [open, setOpen] = React.useState(false);
 
     const onStartButtonClick = useCallback(async (): Promise<void> => {
-        // const ret = await send_command("start");
         setOpen(true);
-        // console.log('---------');
-        // return;
-        const ret: string = "";
-        if (ret === "ok") {
-            setServiceState("Running");
-        } else {
-            console.error(ret);
-        }
     }, []);
 
     const onStopButtonClick = useCallback(async (): Promise<void> => {
-        const ret = await send_command("stop");
+        const ret = await backend_send_command("stop");
         if (ret === "ok") {
             setServiceState("");
         } else {
@@ -54,21 +45,6 @@ export default function MyAppBar() {
         }
         fetched.current = true;
 
-        // const updateDeviceInfo = (deviceInfo: IDeviceInfo) => {
-        //     setDeviceInfo(() => {
-        //         return deviceInfo;
-        //     });
-        // };
-
-        // const fetchDeviceInfo = async () => {
-        //     const audioDeviceResponse = await queryAudioDeviceList();
-        //     console.log(audioDeviceResponse);
-        //     // updateDeviceInfo({
-        //     //     name: "",
-        //     //     index: 0, // TODO: use state.deviceIndex
-        //     // });
-        // };
-
         const fetchServiceState = async (): Promise<void> => {
             const state = await queryServiceState();
             setServiceState(state.runningState);
@@ -79,7 +55,6 @@ export default function MyAppBar() {
         };
 
         fetchServiceState();
-        // fetchDeviceInfo();
     }, []);
 
     return (
