@@ -123,4 +123,4 @@ Contributions are always welcome!
 
 License
 -------
-Whisper's code and model weights are released under the MIT License. See [LICENSE](https://github.com/dzhsurf/hala-trans/blob/main/LICENSE) for further details.
+halatrans's code are released under the MIT License. See [LICENSE](https://github.com/dzhsurf/hala-trans/blob/main/LICENSE) for further details.
