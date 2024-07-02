@@ -7,12 +7,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def get_audio_device_dict() -> Dict[int, str]:
+def get_audio_device_dict() -> Dict[str, str]:
     p = pyaudio.PyAudio()
     device_dict = {}
     for i in range(p.get_device_count()):
         info = p.get_device_info_by_index(i)
-        device_dict[i] = info["name"]
+        device_dict[str(i)] = info["name"]
     return device_dict
 
 
