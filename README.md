@@ -5,6 +5,27 @@ hala-trans is a Real-Time Speech Translate AI Assistant.
 
 **The project is still in its early development stages. If you are interested in the project, feel free to contact us.**
 
+
+# Development Progress Statement
+
+Updated 2/Jul/2024
+
+Backend
+- [TODO] Add session management.
+- [TODO] Add configurable parameters for each subprocess service instead of the current hardcoded approach.
+- [TODO] Optimize user interface interactions.
+
+- [PLANNING] Enhance assistant prompt management.
+- [PLANNING] Improve the capabilities of the LLM Agent.
+- [PLANNING] Cross-Platform Client (Windows, macOS, Linux, iOS, Android) Release Packaging.
+
+Frontend
+- [TODO] Add frontend service config setting.
+- [TODO] Add backend service config setting.
+- [TODO] Add conversation ui. 
+
+
+
 Architecture
 ------------
 
@@ -21,23 +42,7 @@ The architecture of the hala-trans is primarily divided into the following servi
 Communication between subprocesses is achieved using ZeroMQ's PUB/SUB pattern. Each subprocess service can be deployed independently, and load balancing of subprocess services can be implemented by combining XSUB/XPUB, PUSH/PULL pattern.
 
 
-
 ![Architecture](./docs/architecture.png)
-
-
-
-# Development Progress Task List
-
-- [TODO] Add session management.
-- [TODO] Add a storage service to store data.
-- [TODO] Add configurable parameters for each subprocess service instead of the current hardcoded approach.
-- [TODO] Enhance assistant prompt management.
-- [TODO] Optimize user interface interactions.
-
-- [PLANNING] Improve the capabilities of the LLM Agent.
-- [PLANNING] Cross-Platform Client (Windows, macOS, Linux, iOS, Android) Release Packaging.
-
-
 
 
 Requirements
