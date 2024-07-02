@@ -15,10 +15,13 @@ help: ## show this help.
 	@echo "Default target is 'help', showing this message."
 
 install: ## Install dependencies.
-	$(PIP) install -r requirements.txt
+	poetry install
 
-run: ## Local run.
-	cd halatrans && fastapi run web.py
+runDev: ## Local run in development env.
+	cd halatrans && uvicorn web:app --reload
+
+runProd: ## Local run in production env.
+	cd halatrans && gunicorn -c gunicorn_config.py web:app
 
 webui: ## Local run web ui in dev mode.
 	cd webui/app && npm run start
