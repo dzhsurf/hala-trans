@@ -24,6 +24,11 @@ Frontend
 - [TODO] Add backend service config setting.
 - [TODO] Add conversation ui. 
 
+Product Screenshot
+----------
+
+![start](./docs/demo-start.png)
+![transcription](./docs/demo-transcription.jpg)
 
 
 Architecture
