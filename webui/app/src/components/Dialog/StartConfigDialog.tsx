@@ -29,12 +29,20 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
     const [device, setDevice] = useState(defaultDeviceValue);
     const handleDeviceChange = (event: { target: { value: SetStateAction<string>; }; }) => {
         setDevice(event.target.value);
+        console.log('cur: ' + device);
     };
-
-    const [deviceList, setDeviceList] = useState<AudioDeviceItem[]>([defaultDeviceInfoOption]);
+    const [deviceList, setDeviceList] = useState<AudioDeviceItem[]>([]);
 
     const onLaunch = useCallback(() => {
-    }, []);
+        const selectedIndex = deviceList.findIndex((item) => {
+            return item.name === device;
+        });
+        if (selectedIndex < 0) {
+            console.log("launch with config: " + defaultDeviceValue + " idx: undefined");
+        } else {
+            console.log("launch with config: " + deviceList[selectedIndex].name + " idx: " + deviceList[selectedIndex].index);
+        }
+    }, [device]);
     const onDismiss = useCallback(() => {
     }, []);
 
