@@ -30,7 +30,9 @@ class AudioDeviceService(RequestResponseService):
             cmd = data["cmd"]
             if cmd == "list-devices":
                 device_dict = get_audio_device_dict()
-                return json.dumps(device_dict)
+                return bytes(json.dumps(device_dict), encoding="utf-8")
+            else:
+                return bytes(json.dumps({"err": "unknow command"}), encoding="utf-8")
 
         except Exception:
             pass

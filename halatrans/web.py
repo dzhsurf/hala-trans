@@ -113,14 +113,16 @@ async def event_stream(instance: GlobalInstance = Depends(get_global_instance)):
 async def devices_query(instance: GlobalInstance = Depends(get_global_instance)):
     audio_device = instance.get_frontend_service_manager().get_audio_device()
 
-    input = json.dumps(
-        {
-            "cmd": "list-device",
-        }
+    input = bytes(
+        json.dumps(
+            {
+                "cmd": "list-devices",
+            }
+        ),
+        encoding="utf-8",
     )
     resp = await audio_device.request(input)
-    logger.info(resp)
-    return JSONResponse({}, status_code=200)
+    return JSONResponse(json.loads(str(resp, encoding="utf-8")), status_code=200)
 
 
 @app.post("/api/record")

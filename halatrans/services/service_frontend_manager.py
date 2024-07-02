@@ -1,13 +1,8 @@
 import logging
-import queue
-from dataclasses import asdict, dataclass
-from threading import Thread
+from dataclasses import asdict
 from typing import Dict
 
-import zmq
-
-from halatrans.services.base_service import (BaseService, ServiceConfig,
-                                             ServiceMode)
+from halatrans.services.base_service import BaseService, ServiceConfig
 from halatrans.services.base_service_manager import BaseServiceManager
 from halatrans.services.config import (CONST_AUDIO_DEVICE_REP_ADDR,
                                        CONST_AUDIO_DEVICE_SERVICE,
