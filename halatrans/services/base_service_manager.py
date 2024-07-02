@@ -28,7 +28,7 @@ class BaseServiceManager:
 
     def __submit_task__(self, service: BaseService):
         config = service.get_config()
-        mode = config.mode
+        mode = service.get_mode()
         addr = config.addr
         topic = config.topic
         parameters: Dict[str, Any] = (
