@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 import zmq
 from openai import OpenAI
 
-from halatrans.services.base_service import BaseService, ServiceConfig
+from halatrans.services.base_service import CustomService, ServiceConfig
 from halatrans.services.utils import (create_pub_socket, create_sub_socket,
                                       poll_messages)
 
@@ -76,7 +76,7 @@ If there're no questions in the context, response: { questions: [] }
     pub.send_multipart([b"assistant", bytes(json.dumps(item), encoding="utf-8")])
 
 
-class AssistantService(BaseService):
+class AssistantService(CustomService):
     def __init__(self, config: ServiceConfig):
         super().__init__(config)
 

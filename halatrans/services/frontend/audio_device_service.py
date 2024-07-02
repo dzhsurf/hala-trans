@@ -1,16 +1,10 @@
 import json
 import logging
-import signal
 from dataclasses import dataclass
-from multiprocessing.managers import ValueProxy
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-import zmq
-
-from halatrans.services.base_service import BaseService, ServiceConfig
-from halatrans.services.utils import (create_pub_socket, create_rep_socket,
-                                      create_sub_socket,
-                                      handle_response_messages, poll_messages)
+from halatrans.services.base_service import (RequestResponseService,
+                                             ServiceConfig)
 from halatrans.utils.device import get_audio_device_dict
 
 logging.basicConfig(level=logging.INFO)
@@ -22,7 +16,7 @@ class AudioDeviceServiceParameters:
     pass
 
 
-class AudioDeviceService(BaseService):
+class AudioDeviceService(RequestResponseService):
     def __init__(self, config: ServiceConfig):
         super().__init__(config)
 

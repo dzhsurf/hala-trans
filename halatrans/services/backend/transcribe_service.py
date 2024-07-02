@@ -11,7 +11,7 @@ import vosk
 import zmq
 from vosk import KaldiRecognizer
 
-from halatrans.services.base_service import BaseService, ServiceConfig
+from halatrans.services.base_service import CustomService, ServiceConfig
 from halatrans.services.utils import (create_pub_socket, create_sub_socket,
                                       poll_messages)
 
@@ -26,7 +26,7 @@ class TranscribeServiceParameters:
     transcribe_pub_addr: str
 
 
-class TranscribeService(BaseService):
+class TranscribeService(CustomService):
     def __init__(self, config: ServiceConfig):
         super().__init__(config)
 

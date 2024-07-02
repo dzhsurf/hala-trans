@@ -56,8 +56,8 @@ class BaseServiceManager:
         if self.is_terminating or self.is_exit:
             return "services are stopping."
 
-        if self.backend_task_manager is None:
-            self.backend_task_manager = ProcessTaskManager()
+        if self.__task_manager__ is None:
+            self.__task_manager__ = ProcessTaskManager()
 
         self.is_running = True
 

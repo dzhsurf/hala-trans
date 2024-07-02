@@ -1,4 +1,5 @@
 import logging
+from dataclasses import asdict
 from typing import Any, Callable, Dict, List, Optional, Tuple  # noqa: F401
 
 from halatrans.services.backend.assistant_service import (
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class BackendServiceManager(BaseServiceManager):
     def __init__(self):
-        super.__init__(self)
+        super().__init__()
 
     def on_terminate(self):
         return super().on_terminate()
@@ -41,8 +42,7 @@ class BackendServiceManager(BaseServiceManager):
         service_state: Dict[str, BaseService] = {
             "rts2t-main": RTS2TService(
                 ServiceConfig(
-                    mode=ServiceMode.CUSTOM,
-                    parameters=dict(
+                    parameters=asdict(
                         RTS2TServiceParameters(
                             output_pub_addr=CONST_RTS2T_PUB_ADDR,
                             output_pub_topic=CONST_RTS2T_PUB_TOPIC,
@@ -56,8 +56,7 @@ class BackendServiceManager(BaseServiceManager):
             ),
             "rts2t-transcribe": TranscribeService(
                 ServiceConfig(
-                    mode=ServiceMode.CUSTOM,
-                    parameters=dict(
+                    parameters=asdict(
                         TranscribeServiceParameters(
                             audio_pub_addr=CONST_AUDIO_STREAM_PUB_ADDR,
                             audio_pub_topic=CONST_AUDIO_STREAM_PUB_TOPIC,
@@ -68,8 +67,7 @@ class BackendServiceManager(BaseServiceManager):
             ),
             "rts2t-whisper": WhisperService(
                 ServiceConfig(
-                    mode=ServiceMode.CUSTOM,
-                    parameters=dict(
+                    parameters=asdict(
                         WhisperServiceParameters(
                             transcribe_pub_addr=CONST_TRANSCRIBE_PUB_ADDR,
                             whisper_pub_addr=CONST_WHISPER_PUB_ADDR,
@@ -79,8 +77,7 @@ class BackendServiceManager(BaseServiceManager):
             ),
             "rts2t-translation": TranslationService(
                 ServiceConfig(
-                    mode=ServiceMode.CUSTOM,
-                    parameters=dict(
+                    parameters=asdict(
                         TranslationServiceParameters(
                             transcribe_pub_addr=CONST_TRANSCRIBE_PUB_ADDR,
                             whisper_pub_addr=CONST_WHISPER_PUB_ADDR,
@@ -91,8 +88,7 @@ class BackendServiceManager(BaseServiceManager):
             ),
             "rts2t-assistant": AssistantService(
                 ServiceConfig(
-                    mode=ServiceMode.CUSTOM,
-                    parameters=dict(
+                    parameters=asdict(
                         AssistantServiceParameters(
                             whisper_pub_addr=CONST_WHISPER_PUB_ADDR,
                             assistant_pub_addr=CONST_ASSISTANT_PUB_ADDR,
@@ -102,8 +98,7 @@ class BackendServiceManager(BaseServiceManager):
             ),
             "rts2t-storage": StorageService(
                 ServiceConfig(
-                    mode=ServiceMode.CUSTOM,
-                    parameters=dict(
+                    parameters=asdict(
                         StorageServiceParameters(
                             transcribe_pub_addr=CONST_TRANSCRIBE_PUB_ADDR,
                             translation_pub_addr=CONST_TRANSLATION_PUB_ADDR,

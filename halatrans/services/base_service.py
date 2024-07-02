@@ -25,7 +25,6 @@ class ServiceMode(Enum):
 
 @dataclass
 class ServiceConfig:
-    mode: ServiceMode
     addr: Optional[str] = None  # Only available when mode is [REQREP | PUBSUB]
     topic: Optional[str] = None  # Only available when mode is PUBSUB
     parameters: Dict[str, Any] = None
@@ -47,58 +46,16 @@ class BaseService(ABC):
     def get_config(self) -> ServiceConfig:
         return self.config
 
-    async def request(self, input: bytes, timeout: float = 0) -> Optional[bytes]:
-        """
-        Sends a request to service and waits for a response.
-
-        This method is only available when the service mode is set to REQREP
-        (Request-Reply) and a valid address is configured. It sends the input bytes
-        as a multipart message and waits for the response.
-
-        Args:
-            input: The input data to be sent as bytes.
-            timeout: The maximum time in seconds to wait for a response. Default is 0 (no timeout).
-
-        Returns:
-            The response data as bytes, or None if an error occurred or the response is invalid.
-
-        Raises:
-            ValueError: If the service mode is not REQREP or the address is not configured.
-        """
-        # call from main process, only available in REQREP mode
-        if self.config.mode != ServiceMode.REQREP or self.config.addr is None:
-            raise ValueError(f"Config is not REQREP Mode. {self.config}")
-
-        async def request_task(
-            bytes_topic: bytes, addr: str, input: bytes
-        ) -> Optional[bytes]:
-            # TODO: implement timeout
-            ctx = zmq.Context()
-            req = create_req_socket(ctx, self.config.addr)
-            try:
-                req.send_multipart([bytes_topic, input])
-                recv_topic, chunk = req.recv_multipart()
-                if recv_topic != bytes_topic:
-                    raise ValueError(
-                        f"Recv topic is not match, s: {bytes_topic}, r: {recv_topic}"
-                    )
-                return chunk
-            except Exception as err:
-                logger.error(err)
-            finally:
-                req.close()
-            return None
-
-        request_task = asyncio.create_task(
-            request_task(self.config.addr, self.unique_topic, input)
-        )
-        response: Optional[bytes] = await asyncio.gather(request_task)
-        return response
-
+    @abstractmethod
     def on_worker_process_launched(self, stop_flag: ValueProxy[int]):
         pass
 
+    @abstractmethod
     def on_terminating(self):
+        pass
+
+    @abstractmethod
+    def get_mode(self) -> ServiceMode:
         pass
 
     @staticmethod
@@ -153,14 +110,15 @@ class BaseService(ABC):
             logger.error("KeyboardInterrupt, exit")
 
     def __init_service_by_config__(self):
-        if self.config.mode == ServiceMode.REQREP:
+        mode = self.get_mode()
+        if mode == ServiceMode.REQREP:
             self.__init_reqrep_server__()
-        elif self.config.mode == ServiceMode.PUBSUB:
+        elif mode == ServiceMode.PUBSUB:
             self.__init_pubsub_server__()
-        elif self.config.mode == ServiceMode.CUSTOM:
+        elif mode == ServiceMode.CUSTOM:
             self.__init_custom_server__()
         else:
-            raise ValueError(f"Unknow mode: {self.config.mode}")
+            raise ValueError(f"Unknow mode: {mode}")
 
     ######## REQREP Mode ########
 
@@ -294,3 +252,125 @@ class BaseService(ABC):
         parameters: Dict[str, Any],
     ):
         cls.on_worker_process_custom(stop_flag, parameters)
+
+
+class BaseServiceImpl(BaseService):
+    def __init__(self, config: ServiceConfig):
+        super().__init__(config)
+
+    def on_worker_process_launched(self, stop_flag: ValueProxy[int]):
+        super().on_worker_process_launched(stop_flag)
+
+    def on_terminating(self):
+        super().on_terminating()
+
+
+class RequestResponseService(BaseServiceImpl):
+    def __init__(self, config: ServiceConfig):
+        super().__init__(config)
+
+    def get_mode(self) -> ServiceMode:
+        return ServiceMode.REQREP
+
+    async def request(self, input: bytes, timeout: float = 0) -> Optional[bytes]:
+        """
+        Sends a request to service and waits for a response.
+
+        It sends the input bytes as a multipart message and waits for the response.
+
+        Args:
+            input: The input data to be sent as bytes.
+            timeout: The maximum time in seconds to wait for a response. Default is 0 (no timeout).
+
+        Returns:
+            The response data as bytes, or None if an error occurred or the response is invalid.
+
+        Raises:
+            ValueError: If the service mode is not REQREP or the address is not configured.
+        """
+        if self.config.addr is None:
+            raise ValueError(f"Config addr is not setted. {self.config}")
+
+        async def request_task(
+            bytes_topic: bytes, addr: str, input: bytes
+        ) -> Optional[bytes]:
+            # TODO: implement timeout
+            ctx = zmq.Context()
+            req = create_req_socket(ctx, self.config.addr)
+            try:
+                req.send_multipart([bytes_topic, input])
+                recv_topic, chunk = req.recv_multipart()
+                if recv_topic != bytes_topic:
+                    raise ValueError(
+                        f"Recv topic is not match, s: {bytes_topic}, r: {recv_topic}"
+                    )
+                return chunk
+            except Exception as err:
+                logger.error(err)
+            finally:
+                req.close()
+            return None
+
+        request_task = asyncio.create_task(
+            request_task(self.config.addr, self.unique_topic, input)
+        )
+        response: Optional[bytes] = await asyncio.gather(request_task)
+        return response
+
+    @staticmethod
+    def on_worker_process_publisher(
+        parameters: Dict[str, Any],
+    ) -> Generator[bytes, Optional[str], None]:
+        # Do nothing
+        pass
+
+    @staticmethod
+    def on_worker_process_custom(
+        stop_flag: ValueProxy[int], parameters: Dict[str, Any]
+    ):
+        # Do nothing
+        pass
+
+
+class PublishSubscribeService(BaseServiceImpl):
+    def __init__(self, config: ServiceConfig):
+        super().__init__(config)
+
+    def get_mode(self) -> ServiceMode:
+        return ServiceMode.PUBSUB
+
+    @staticmethod
+    def on_worker_process_response(
+        parameters: Dict[str, Any], topic: str, chunk: bytes
+    ) -> Optional[bytes]:
+        # Do nothing
+        pass
+
+    @staticmethod
+    def on_worker_process_custom(
+        stop_flag: ValueProxy[int], parameters: Dict[str, Any]
+    ):
+        # Do nothing
+        pass
+
+
+class CustomService(BaseServiceImpl):
+    def __init__(self, config: ServiceConfig):
+        super().__init__(config)
+
+    def get_mode(self) -> ServiceMode:
+        return ServiceMode.CUSTOM
+
+    @staticmethod
+    def on_worker_process_response(
+        parameters: Dict[str, Any], topic: str, chunk: bytes
+    ) -> Optional[bytes]:
+        # Do nothing
+        pass
+
+    @staticmethod
+    def on_worker_process_publisher(
+        parameters: Dict[str, Any],
+    ) -> Generator[bytes, Optional[str], None]:
+        # Do nothing
+        pass

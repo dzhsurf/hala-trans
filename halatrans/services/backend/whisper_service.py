@@ -10,7 +10,7 @@ import numpy as np
 import zmq
 from faster_whisper import WhisperModel
 
-from halatrans.services.base_service import BaseService, ServiceConfig
+from halatrans.services.base_service import CustomService, ServiceConfig
 from halatrans.services.utils import (create_pub_socket, create_sub_socket,
                                       poll_messages)
 
@@ -68,7 +68,7 @@ def process_faster_whisper_transcribe(
         whisper_pub.send_multipart([b"transcribe", msg_body])
 
 
-class WhisperService(BaseService):
+class WhisperService(CustomService):
     def __init__(self, config: ServiceConfig):
         super().__init__(config)
 

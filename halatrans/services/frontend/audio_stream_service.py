@@ -6,7 +6,8 @@ from typing import Any, Dict, Generator, Optional
 
 import sounddevice as sd
 
-from halatrans.services.base_service import BaseService, ServiceConfig
+from halatrans.services.base_service import (PublishSubscribeService,
+                                             ServiceConfig)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ class AudioStreamServiceParameters:
     device: Optional[int] = None
 
 
-class AudioStreamService(BaseService):
+class AudioStreamService(PublishSubscribeService):
     def __init__(self, config: ServiceConfig):
         super().__init__(config)
 

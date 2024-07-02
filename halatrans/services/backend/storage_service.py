@@ -10,7 +10,7 @@ from sqlalchemy import Column, Integer, LargeBinary, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from halatrans.services.base_service import BaseService, ServiceConfig
+from halatrans.services.base_service import CustomService, ServiceConfig
 from halatrans.services.utils import create_sub_socket, poll_messages
 
 logging.basicConfig(level=logging.INFO)
@@ -53,7 +53,7 @@ class StorageServiceParameters:
     translation_pub_addr: str
 
 
-class StorageService(BaseService):
+class StorageService(CustomService):
     def __init__(self, config: ServiceConfig):
         super().__init__(config)
 

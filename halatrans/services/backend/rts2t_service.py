@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import zmq
 
-from halatrans.services.base_service import BaseService, ServiceConfig
+from halatrans.services.base_service import CustomService, ServiceConfig
 from halatrans.services.utils import (create_pub_socket, create_sub_socket,
                                       poll_messages)
 
@@ -28,7 +28,7 @@ class RTS2TServiceParameters:
     assistant_pub_addr: str
 
 
-class RTS2TService(BaseService):
+class RTS2TService(CustomService):
     def __init__(self, config: ServiceConfig):
         super().__init__(config)
         self.__output_queue__ = queue.Queue(maxsize=OUTPUT_QUEUE_SIZE_LIMIT)

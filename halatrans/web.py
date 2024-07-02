@@ -79,7 +79,7 @@ async def event_stream(instance: GlobalInstance = Depends(get_global_instance)):
             service = instance.get_backend_service_manager().get_service("rts2t-main")
             if service is None:
                 # service not started
-                yield f"data: {json.dumps({"item": None})}\n\n"
+                yield f"data: {json.dumps({'item': None})}\n\n"
                 await asyncio.sleep(1)
                 continue
             else:

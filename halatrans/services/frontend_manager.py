@@ -1,6 +1,6 @@
 import logging
 import queue
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from threading import Thread
 from typing import Dict
 
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class FrontendServiceManager(BaseServiceManager):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
 
     def on_terminate(self):
         super().on_terminate()
@@ -35,9 +35,8 @@ class FrontendServiceManager(BaseServiceManager):
         service_state: Dict[str, BaseService] = {
             CONST_AUDIO_DEVICE_SERVICE: AudioDeviceService(
                 ServiceConfig(
-                    mode=ServiceMode.REQREP,
                     addr=CONST_AUDIO_DEVICE_REP_ADDR,
-                    parameters=dict(
+                    parameters=asdict(
                         AudioDeviceServiceParameters(),
                     ),
                 )
@@ -59,10 +58,9 @@ class FrontendServiceManager(BaseServiceManager):
 
         service = AudioStreamService(
             ServiceConfig(
-                mode=ServiceMode.PUBSUB,
                 addr=CONST_AUDIO_STREAM_PUB_ADDR,
                 topic=CONST_AUDIO_STREAM_PUB_TOPIC,
-                parameters=dict(parameters),
+                parameters=asdict(parameters),
             )
         )
         self.__service_state__[CONST_AUDIO_STREAM_SERVICE] = service
