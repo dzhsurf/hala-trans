@@ -173,6 +173,7 @@ async function connectDataStreamingServer<T>(
                 const { done, value } = await reader.read();
                 if (done) {
                     console.log('Stream finished.');
+                    abortController.abort('done');
                     break;
                 }
 

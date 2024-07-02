@@ -26,12 +26,13 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
     const [maxWidth, setMaxWidth] = useState<DialogProps['maxWidth']>('sm');
     // const [open, setOpen] = useState(prop.open);
     const fetched = useRef(false);
+
     const [device, setDevice] = useState(defaultDeviceValue);
+    const [deviceList, setDeviceList] = useState<AudioDeviceItem[]>([defaultDeviceInfoOption]);
+
     const handleDeviceChange = (event: { target: { value: SetStateAction<string>; }; }) => {
         setDevice(event.target.value);
-        console.log('cur: ' + device);
     };
-    const [deviceList, setDeviceList] = useState<AudioDeviceItem[]>([]);
 
     const onLaunch = useCallback(() => {
         const selectedIndex = deviceList.findIndex((item) => {
@@ -54,9 +55,13 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
             console.log("frontend record service params: " + param);
             await frontend_record_service(param.cmd, param.deviceIndex);
         });
-    }, [device]);
+    }, [device, deviceList]);
+
     const onDismiss = useCallback(() => {
-    }, []);
+        if (onClose) {
+            onClose({}, "backdropClick");
+        }
+    }, [onClose]);
 
     useEffect(() => {
         if (!open) {
@@ -101,13 +106,13 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
                                 value={device}
                                 onChange={handleDeviceChange}
                                 label="Device"
-                                inputProps={{
-                                    name: 'device-index',
-                                    id: 'device-index',
-                                }}
+                                // inputProps={{
+                                //     name: 'device-index',
+                                //     id: 'device-index',
+                                // }}
                             >
                                 {deviceList.map((device, index) => (
-                                    <MenuItem value={device.name}>{device.name}</MenuItem>
+                                    <MenuItem key={'device-' + index.toString()} value={device.name}>{device.name}</MenuItem>
                                 ))}
                             </Select>
                         </FormControl>
