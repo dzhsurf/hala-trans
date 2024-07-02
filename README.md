@@ -6,7 +6,7 @@ hala-trans is a Real-Time Speech Translate AI Assistant.
 **The project is still in its early development stages. If you are interested in the project, feel free to contact us.**
 
 
-# Development Progress Statement
+# Progress Statement
 
 Updated 2/Jul/2024
 
