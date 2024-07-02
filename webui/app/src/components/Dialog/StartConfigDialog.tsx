@@ -1,4 +1,4 @@
-import React, { Fragment, SetStateAction, useEffect, useRef, useState } from 'react';
+import React, { Fragment, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog, { DialogProps } from '@mui/material/Dialog';
@@ -33,6 +33,11 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
 
     const [deviceList, setDeviceList] = useState<AudioDeviceItem[]>([defaultDeviceInfoOption]);
 
+    const onLaunch = useCallback(() => {
+    }, []);
+    const onDismiss = useCallback(() => {
+    }, []);
+
     useEffect(() => {
         if (!open) {
             return;
@@ -52,10 +57,8 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
                 onClose={onClose}
             >
                 <DialogTitle>Start RTS2T Service</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        You can set service config here.
-                    </DialogContentText>
+                <DialogContent dividers>
+                    <DialogContentText>Select the target audio device.</DialogContentText>
                     <Box
                         noValidate
                         component="form"
@@ -63,7 +66,7 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
                             display: 'flex',
                             flexDirection: 'column',
                             m: 'auto',
-                            width: 'fit-content',
+                            // width: 'fit-content',
                         }}
                     >
                         <FormControl sx={{
@@ -88,17 +91,27 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
                                 ))}
                             </Select>
                         </FormControl>
-                        {/* <FormControlLabel
+
+                        <DialogContentText sx={{ mt: 2, }}>TODO: Features setting</DialogContentText>
+                        <FormControlLabel
                             sx={{ mt: 1 }}
                             control={
-                                <Switch checked={fullWidth} onChange={handleFullWidthChange} />
+                                <Switch disabled={true} checked={true} onChange={undefined} />
                             }
-                            label="Full width"
-                        /> */}
+                            label="Translate service"
+                        />
+                        <FormControlLabel
+                            sx={{ mt: 1 }}
+                            control={
+                                <Switch disabled={true} checked={true} onChange={undefined} />
+                            }
+                            label="Assistant service"
+                        />
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    {/* <Button onClick={onClose}>Close</Button> */}
+                    <Button onClick={onDismiss}>Dismiss</Button>
+                    <Button onClick={onLaunch}>Launch</Button>
                 </DialogActions>
             </Dialog>
         </Fragment>
