@@ -7,6 +7,7 @@ import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
+import TerminalIcon from '@mui/icons-material/Terminal';
 import { backend_send_command, queryServiceState } from '../../services/api';
 import StartConfigDialogComponent from '../Dialog/StartConfigDialog';
 import AudioDeviceStatusButton from '../../fetures/audioDeviceStatus/AudioDeviceStatusButton';
@@ -85,6 +86,15 @@ export default function MyAppBar() {
                         onClick={onStopButtonClick}
                     >
                         Stop
+                    </Button>
+                    <Button
+                        disabled={false}
+                        size="medium"
+                        startIcon={<TerminalIcon></TerminalIcon>}
+                        color="inherit"
+                        onClick={undefined}
+                    >
+                        Console
                     </Button>
                 </Toolbar>
             </AppBar>
