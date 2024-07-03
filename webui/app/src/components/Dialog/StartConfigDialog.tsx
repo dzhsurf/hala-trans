@@ -15,6 +15,8 @@ import Switch from '@mui/material/Switch';
 import { AudioDeviceItem, AudioDeviceResponse, queryAudioDeviceList, backend_send_command, frontend_record_service } from '../../services/api';
 import { useDispatch } from 'react-redux';
 import changeDevice from '../../fetures/audioDeviceStatus/audioDeviceStatusAction';
+import TextField from '@mui/material/TextField';
+import { Divider } from '@mui/material';
 
 interface StartConfigDialogProps extends DialogProps {
     // custom props
@@ -103,16 +105,15 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
                             width: 'auto',
                             whiteSpace: 'nowrap',
                         }}>
-                            <InputLabel htmlFor="device-index">Device</InputLabel>
+                            <InputLabel htmlFor="select-device">Device</InputLabel>
                             <Select
                                 autoFocus
                                 value={device}
                                 onChange={handleDeviceChange}
                                 label="Device"
-                                // inputProps={{
-                                //     name: 'device-index',
-                                //     id: 'device-index',
-                                // }}
+                                inputProps={{
+                                    id: 'select-device'
+                                }}
                             >
                                 {deviceList.map((device, index) => (
                                     <MenuItem key={'device-' + index.toString()} value={device.name}>{device.name}</MenuItem>
@@ -120,14 +121,88 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
                             </Select>
                         </FormControl>
 
-                        <DialogContentText sx={{ mt: 2, }}>TODO: Features setting</DialogContentText>
+                        <DialogContentText sx={{ mt: 2, }}>TODO: Feature Settings</DialogContentText>
+
                         <FormControlLabel
-                            sx={{ mt: 1 }}
+                            sx={{ mt: 0 }}
                             control={
-                                <Switch disabled={true} checked={true} onChange={undefined} />
+                                <Switch onChange={undefined}
+                                    disabled={true}
+                                    checked={true}
+                                />
                             }
-                            label="Translate service"
+                            label="Transcribe service"
                         />
+                        <FormControl sx={{
+                            mt: 2,
+                            width: 'auto',
+                            whiteSpace: 'nowrap',
+                        }}>
+                            <InputLabel htmlFor="select-trans-engine-1">Realtime Transcribe Engine</InputLabel>
+                            <Select
+                                value="vosk"
+                                disabled={true}
+                                onChange={undefined}
+                                label="Realtime Transcribe Engine"
+                                inputProps={{
+                                    id: 'select-trans-engine-1'
+                                }}
+                            >
+                                <MenuItem value={'vosk'}>Vosk</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <FormControl sx={{
+                            mt: 2,
+                            width: 'auto',
+                            whiteSpace: 'nowrap',
+                        }}>
+                            <InputLabel htmlFor="select-trans-engine-2">Transcribe Engine</InputLabel>
+                            <Select
+                                value="faster-whisper"
+                                disabled={false}
+                                onChange={undefined}
+                                label="Transcribe Engine"
+                                inputProps={{
+                                    id: 'select-trans-engine-2'
+                                }}
+                            >
+                                <MenuItem value={'faster-whisper'}>Faster-Whisper</MenuItem>
+                                <MenuItem value={'vosk'}>Vosk</MenuItem>
+                                <MenuItem value={'openai-whisper'}>OpenAI-Whisper</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <FormControlLabel
+                            sx={{ mt: 2 }}
+                            control={
+                                <Switch onChange={undefined}
+                                    disabled={true}
+                                    checked={true}
+                                />
+                            }
+                            label="Translation service"
+                        />
+
+                        <FormControl sx={{
+                            mt: 2,
+                            width: 'auto',
+                            whiteSpace: 'nowrap',
+                        }}>
+                            <InputLabel htmlFor="select-translation-engine">Translation Engine</InputLabel>
+                            <Select
+                                value="openai-gpt-4o"
+                                disabled={true}
+                                onChange={undefined}
+                                label="Translation Engine"
+                                inputProps={{
+                                    id: 'select-translation-engine'
+                                }}
+                            >
+                                <MenuItem value={'openai-gpt-4o'}>OpenAI: GPT-4o</MenuItem>
+                            </Select>
+                        </FormControl>
+
                         <FormControlLabel
                             sx={{ mt: 1 }}
                             control={
@@ -135,6 +210,21 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
                             }
                             label="Assistant service"
                         />
+
+                        <DialogContentText sx={{ mt: 2, }}>Global Settings</DialogContentText>
+
+                        <TextField sx={{
+                            mt: 2,
+                        }}
+                            id="apikey-input"
+                            label="OpenAI APIKEY"
+                            defaultValue="sk-****"
+                            InputProps={{
+                                readOnly: false,
+                                disabled: true,
+                            }}
+                        />
+
                     </Box>
                 </DialogContent>
                 <DialogActions>
