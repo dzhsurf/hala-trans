@@ -6,6 +6,8 @@ hala-trans is a Real-Time Speech Translate AI Assistant.
 **This project is still in its early development stages. If you are interested in this project, feel free to contact us.**
 
 
+
+
 # Progress Statement
 
 Updated 2/Jul/2024
@@ -24,11 +26,16 @@ Frontend
 - [TODO] Add backend service config setting.
 - [TODO] Add conversation ui. 
 
+
+
 Product Screenshot
 ----------
 
 ![start](./docs/demo-start.png)
+
 ![transcription](./docs/demo-transcription.jpg)
+
+
 
 
 Architecture
@@ -46,10 +53,13 @@ The architecture of the hala-trans is primarily divided into the following servi
 
 Communication between subprocesses is achieved using ZeroMQ's PUB/SUB pattern. Each subprocess service can be deployed independently, and load balancing of subprocess services can be implemented by combining XSUB/XPUB, PUSH/PULL pattern.
 
-
 ![Architecture](./docs/architecture.png)
 
 ![BaseService](./docs/base_service_design.png)
+
+
+
+
 
 Requirements
 ------------
@@ -82,14 +92,14 @@ Install & Run Background Service
 
 poetry install
 make runDev
-
 ```
+
+
 
 Run WebUI
 ---------
 
 ```shell
-
 cd webui/app
 
 npm install 
@@ -116,11 +126,15 @@ https://github.com/SYSTRAN/faster-whisper
 https://platform.openai.com/docs/api-reference/introduction
 
 
+
 Contribution
 ------------
 
 Contributions are always welcome!
 
+
+
 License
 -------
+
 halatrans's code are released under the MIT License. See [LICENSE](https://github.com/dzhsurf/hala-trans/blob/main/LICENSE) for further details.
