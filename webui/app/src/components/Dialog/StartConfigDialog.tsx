@@ -16,7 +16,6 @@ import { AudioDeviceItem, AudioDeviceResponse, queryAudioDeviceList, backend_sen
 import { useDispatch } from 'react-redux';
 import changeDevice from '../../fetures/audioDeviceStatus/audioDeviceStatusAction';
 import TextField from '@mui/material/TextField';
-import { Divider } from '@mui/material';
 
 interface StartConfigDialogProps extends DialogProps {
     // custom props
