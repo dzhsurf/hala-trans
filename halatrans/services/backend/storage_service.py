@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # engine = create_engine("sqlite:///:memory:", echo=False)
-engine = create_engine("sqlite:///msgs.db", echo=False)
+engine = create_engine("sqlite:///data/msgs.db", echo=False)
 
 Base = declarative_base()
 Session = sessionmaker(bind=engine)
