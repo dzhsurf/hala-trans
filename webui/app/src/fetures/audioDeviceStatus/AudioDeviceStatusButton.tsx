@@ -14,7 +14,7 @@ const AudioDeviceStatusButton: React.FC = () => {
 
     useEffect(() => {
         handleUpdate();
-    }, [currentDevice]);
+    }, [handleUpdate]);
     
     return (
         <Button

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Box, Typography, Paper, Divider } from '@mui/material';
-import { Label } from '@mui/icons-material';
 
 interface IChatBubble {
     text: string;

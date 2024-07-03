@@ -13,7 +13,7 @@ const Home: React.FC = () => {
     const handleFetch = useCallback(async () => {
         const startAsyncThunk = startEventStream();
         const extra = {};
-        const p = await startAsyncThunk(dispatch, store.getState, extra);
+        await startAsyncThunk(dispatch, store.getState, extra);
         // setTimeout(() => {
         //     (p.payload as AbortController).abort("hi");
         // }, 10000);
@@ -25,7 +25,7 @@ const Home: React.FC = () => {
         }
         fetched.current = true;
         handleFetch();
-    }, []);
+    }, [handleFetch]);
 
     return (
         <Box sx={{ display: 'flex', flexGrow: 1 }}>

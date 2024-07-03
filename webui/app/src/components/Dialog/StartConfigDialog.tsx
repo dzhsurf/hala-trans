@@ -1,4 +1,4 @@
-import React, { Fragment, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, SetStateAction, useCallback, useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog, { DialogProps } from '@mui/material/Dialog';
@@ -10,9 +10,9 @@ import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
+import Select from '@mui/material/Select';
 import Switch from '@mui/material/Switch';
-import { AudioDeviceItem, AudioDeviceResponse, queryAudioDeviceList, queryServiceState, backend_send_command, ServiceStateType, frontend_record_service } from '../../services/api';
+import { AudioDeviceItem, AudioDeviceResponse, queryAudioDeviceList, backend_send_command, frontend_record_service } from '../../services/api';
 import { useDispatch } from 'react-redux';
 import changeDevice from '../../fetures/audioDeviceStatus/audioDeviceStatusAction';
 
@@ -24,9 +24,9 @@ const defaultDeviceValue = 'AUTO';
 const defaultDeviceInfoOption = new AudioDeviceItem(defaultDeviceValue);
 
 const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
-    const [maxWidth, setMaxWidth] = useState<DialogProps['maxWidth']>('sm');
+    const [maxWidth] = useState<DialogProps['maxWidth']>('sm');
     // const [open, setOpen] = useState(prop.open);
-    const fetched = useRef(false);
+    // const fetched = useRef(false);
     const dispatch = useDispatch();
 
     const [device, setDevice] = useState(defaultDeviceValue);

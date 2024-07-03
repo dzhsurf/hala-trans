@@ -179,7 +179,7 @@ async function connectDataStreamingServer<T>(
 
                 const bodyText: string = decoder.decode(value);
                 const chunks: string[] = bodyText.trim().split("\n\n");
-                let stop = false;
+
                 for (const i in chunks) {
                     if (signal.aborted) {
                         break;
