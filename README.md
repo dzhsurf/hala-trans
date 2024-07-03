@@ -41,19 +41,32 @@ Product Screenshot
 Architecture
 ------------
 
-The architecture of the hala-trans is primarily divided into the following services:
+The architecture of halatrans is primarily composed of the following components:
 
-1. **Backend Server:** Uses FastAPI to communicate with subprocesses through IPC Queue and manages subprocesses via ProcessPoolExecutor.
-2. **RTS2T Controller Service:** A subprocess service responsible for coordinating data from all other subprocess services and providing it to the backend server.
-3. **Audio Stream Service:** Provides voice stream data.
-4. **Transcribe Service:** Utilizes Vosk for real-time speech-to-text transcriptions.
-5. **Whisper Transcribe Service:** Uses the Faster Whisper model for intermittent transcription of voice data. The transcriptions from this service are considered the final results. The Whisper model has higher accuracy than Vosk but is slower, hence, there are two transcription services.
-6. **Translation Service:** Uses GPT-4o to translate the transcribed text.
-7. **Assistant Service:** Uses GPT-4o to analyze the transcribed text and provide assistance and suggestions.
+1. **Backend Service**: 
+   1. **Backend Web Server**: A RestAPI Server implemented with FastAPI. It provides the interface for interaction with the Frontend UI.
+   2. **RTS2T Service**: A subprocess service used to integrate and manage information from other subprocess services, communicating with the Backend Web Server via IPC.
+   3. **Transcribe Service**: A subprocess service, utilizes Vosk for real-time speech-to-text transcriptions.
+   4. **Whisper Transcribe Service**: A subprocess service, uses the Faster Whisper model for intermittent transcription of voice data. The transcriptions from this service are considered the final results. The Whisper model has higher accuracy than Vosk but is slower, hence, there are two transcription services.
+   5. **Translation Service**: Uses GPT-4o to translate the transcribed text.
+   6. **Assistant Service**: Uses GPT-4o to analyze the transcribed text and provide assistance and suggestions.
+   7. **Storage Service**: Stores the original and translated data in a database.
+2. **Frontend Service**:
+   1. **Frontend Server/Bridge**: A RestAPI Server or API Bridge for interacting with the Frontend UI.
+   2. **Audio Device Service**: A subprocess service that uses PyAudio (or others) to provide functionalities such as querying audio devices.
+   3. **Audio Stream Service**: A subprocess service that provides voice stream data.
+3. **Frontend UI**: A Web UI App implemented with ReactJS/Redux/Material UI.
+4. **Desktop/Mobile App Packages**: [TBD] Packages the Frontend UI and Frontend Service into standalone desktop/mobile applications.
+
+
 
 Communication between subprocesses is achieved using ZeroMQ's PUB/SUB pattern. Each subprocess service can be deployed independently, and load balancing of subprocess services can be implemented by combining XSUB/XPUB, PUSH/PULL pattern.
 
 ![Architecture](./docs/architecture.png)
+
+
+
+Below is the design of BaseService:
 
 ![BaseService](./docs/base_service_design.png)
 
