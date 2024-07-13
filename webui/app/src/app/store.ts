@@ -1,6 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
-import eventStreamReducer from "../fetures/eventStream/eventStreamSlice";
-import audioDeviceStatusReducer from "../fetures/audioDeviceStatus/audioDeviceStatusSlice";
+import eventStreamReducer from "@features/eventStream/eventStreamSlice";
+import audioDeviceStatusReducer from "@features/audioDeviceStatus/audioDeviceStatusSlice";
 
 export const store = configureStore({
     reducer: {

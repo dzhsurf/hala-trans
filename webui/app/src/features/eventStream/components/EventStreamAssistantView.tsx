@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../../app/store';
+import { RootState } from '@app/store';
 import { Box, Paper } from '@mui/material';
-// import MarkdownPanel from '../../../containers/markdown/markdown';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 

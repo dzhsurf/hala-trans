@@ -14,7 +14,7 @@ import Select from '@mui/material/Select';
 import Switch from '@mui/material/Switch';
 import { AudioDeviceItem, AudioDeviceResponse, queryAudioDeviceList, backend_send_command, frontend_record_service } from '../../services/api';
 import { useDispatch } from 'react-redux';
-import changeDevice from '../../fetures/audioDeviceStatus/audioDeviceStatusAction';
+import changeDevice from '@features/audioDeviceStatus/audioDeviceStatusAction';
 import TextField from '@mui/material/TextField';
 
 interface StartConfigDialogProps extends DialogProps {

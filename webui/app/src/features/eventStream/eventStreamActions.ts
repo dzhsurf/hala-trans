@@ -1,8 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { eventStreamSlice } from './eventStreamSlice';
-import { AppDispatch, RootState } from '../../app/store';
+import { AppDispatch, RootState } from '@app/store';
 import connectDataStreamingServer, { OnErrorCallback, OnReceiveDataCallback } from '../../services/api';
-import { ChatMessage } from '../../components/ChatView/ChatView';
+import { ChatMessage } from '@components/ChatView/ChatView';
 
 interface StreamEventItemAssistant {
     text: string

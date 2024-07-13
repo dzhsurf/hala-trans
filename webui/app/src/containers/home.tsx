@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Grid, Box } from '@mui/material';
-import EventStreamTranscriptionView from '../fetures/eventStream/components/EventStreamTranscriptionView';
-import EventStreamAssistantView from '../fetures/eventStream/components/EventStreamAssistantView';
+import EventStreamTranscriptionView from '@features/eventStream/components/EventStreamTranscriptionView';
+import EventStreamAssistantView from '@features/eventStream/components/EventStreamAssistantView';
 import { useDispatch } from 'react-redux';
-import { startEventStream } from '../fetures/eventStream/eventStreamActions';
-import { store } from '../app/store';
+import { startEventStream } from '@features/eventStream/eventStreamActions';
+import { store } from '@app/store';
 
 const Home: React.FC = () => {
     const dispatch = useDispatch();

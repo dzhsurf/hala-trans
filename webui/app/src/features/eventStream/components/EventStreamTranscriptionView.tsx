@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../../app/store';
-import ChatView, { ChatMessage } from '../../../components/ChatView/ChatView';
+import { RootState } from '@app/store';
+import ChatView, { ChatMessage } from '@components/ChatView/ChatView';
 
 
 const EventStreamTranscriptionView: React.FC = () => {

@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { startEventStream } from './eventStreamActions';
-import { ChatMessage } from '../../components/ChatView/ChatView';
+import { ChatMessage } from '@components/ChatView/ChatView';
 
 export interface EventStreamState {
     audioMessages: ChatMessage[]

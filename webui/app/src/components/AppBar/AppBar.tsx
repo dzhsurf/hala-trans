@@ -8,9 +8,9 @@ import MenuIcon from '@mui/icons-material/Menu';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import TerminalIcon from '@mui/icons-material/Terminal';
-import { backend_send_command, queryServiceState } from '../../services/api';
-import StartConfigDialogComponent from '../Dialog/StartConfigDialog';
-import AudioDeviceStatusButton from '../../fetures/audioDeviceStatus/AudioDeviceStatusButton';
+import { backend_send_command, queryServiceState } from '@services/api';
+import StartConfigDialogComponent from '@components/Dialog/StartConfigDialog';
+import AudioDeviceStatusButton from '@features/audioDeviceStatus/AudioDeviceStatusButton';
  
 type ServiceStateType = "" | "Running";
 

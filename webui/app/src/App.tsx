@@ -1,5 +1,5 @@
 import { Box, GlobalStyles } from '@mui/material';
-import MyAppBar from './components/AppBar/AppBar';
+import MyAppBar from '@components/AppBar/AppBar';
 
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -8,8 +8,8 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
-import theme from './theme/theme';
-import Home from './containers/home';
+import theme from '@theme/theme';
+import Home from '@containers/home';
 
 const globalStyles = {
   'code': {

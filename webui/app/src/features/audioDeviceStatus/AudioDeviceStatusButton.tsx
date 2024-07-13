@@ -1,7 +1,7 @@
 import Button from "@mui/material/Button";
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import { useSelector } from "react-redux";
-import { RootState } from "../../app/store";
+import { RootState } from "@app/store";
 import { useCallback, useEffect, useState } from "react";
 
 const AudioDeviceStatusButton: React.FC = () => {
