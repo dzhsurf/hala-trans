@@ -11,7 +11,7 @@ import TerminalIcon from '@mui/icons-material/Terminal';
 import { backend_send_command, queryServiceState } from '../../services/api';
 import StartConfigDialogComponent from '../Dialog/StartConfigDialog';
 import AudioDeviceStatusButton from '../../fetures/audioDeviceStatus/AudioDeviceStatusButton';
-
+ 
 type ServiceStateType = "" | "Running";
 
 export default function MyAppBar() {
