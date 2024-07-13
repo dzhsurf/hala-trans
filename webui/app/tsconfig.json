@@ -19,13 +19,14 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "baseUrl": "src",
     "paths": {
-      "@app": ["./app/*"],
-      "@theme": ["./theme/*"],
-      "@containers": ["./containers/*"],
-      "@components": ["./components/*"],
-      "@services": ["./services/*"],
-      "@features": ["./features/*"]
+      "@app/*": ["./app/*"],
+      "@theme/*": ["./theme/*"],
+      "@containers/*": ["./containers/*"],
+      "@components/*": ["./components/*"],
+      "@services/*": ["./services/*"],
+      "@features/*": ["./features/*"]
     }
   },
   "include": [
