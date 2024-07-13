@@ -62,11 +62,13 @@ sudo make install
 poetry install
 ```
 
-**Run **
+**Run**
 
 ```shell
 # Since libasound2.so.2 is installed in /usr/local/lib, it may not be found at runtime. You need to set the library search path.
 export LD_LIBRARY_PATH=/usr/local/lib 
+# Need to set OPENAI_API_KEY
+export OPENAI_API_KEY="xxx"
 make runDev
 ```
 
