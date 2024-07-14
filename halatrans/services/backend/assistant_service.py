@@ -28,7 +28,7 @@ def openai_chat_completions(client: OpenAI, text: str) -> str:
     # use openai to translate the text
     response = client.chat.completions.create(
         model="gpt-4o",
-        response_format={"type": "json_object"},
+        # response_format={"type": "json_object"},
         messages=[
             {
                 "role": "system",
@@ -43,14 +43,6 @@ def openai_chat_completions(client: OpenAI, text: str) -> str:
     content = response.choices[0].message.content
     return content
 
-
-# extract the technical/design question from the conversation
-# then answer the question
-# 下面内容是面试过程的招聘者的语音对话内容,忽略里面的闲聊和与技术无关的信息问题,提取面试者的问题内容。使用json格式返回。
-# 例如
-# { questions: ["Why are you interested in the position in Lyft?", "Talk about your work experiences."] }
-
-
 # Do not use long sentence, response in short.
 def process_openai_assistant(
     client: OpenAI,
@@ -58,10 +50,8 @@ def process_openai_assistant(
     topic: bytes,
     all_messages: List[str],
 ):
-    user_prompt = """Below is the interviewer's speech transcription during an interview process. 
-Ignore small talk and non-technical information questions, and extract the questions asked by the interviewer.
-And format the output as JSON. For example here is the output: { questions: ["Why are you interested in the position in Lyft?", "Talk about your work experiences."] } 
-If there're no questions in the context, response: { questions: [] }
+    user_prompt = """
+Analyze the following conversation content, extract the main points using concise language, and provide advice for resolution.
 ---
 """
 
