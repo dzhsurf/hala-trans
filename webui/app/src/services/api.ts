@@ -173,7 +173,9 @@ async function connectDataStreamingServer<T>(
                 const { done, value } = await reader.read();
                 if (done) {
                     console.log('Stream finished.');
-                    abortController.abort('done');
+                    // abortController.abort('done');
+                    // wait 10 seconds...
+                    await new Promise((resolver) => { setTimeout(resolver, 10000) });
                     break;
                 }
 

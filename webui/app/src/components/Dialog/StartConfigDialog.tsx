@@ -17,16 +17,16 @@ import { useDispatch } from 'react-redux';
 import changeDevice from '@features/audioDeviceStatus/audioDeviceStatusAction';
 import TextField from '@mui/material/TextField';
 
-interface StartConfigDialogProps extends DialogProps {
-    // custom props
+interface CustomDialogProps extends DialogProps {
+    onDone: () => void;
 };
 
 const defaultDeviceValue = 'AUTO';
 const defaultDeviceInfoOption = new AudioDeviceItem(defaultDeviceValue);
 
-const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
+const StartConfigDialog = ({ open, onClose, onDone }: CustomDialogProps) => {
     const [maxWidth] = useState<DialogProps['maxWidth']>('sm');
-    // const [open, setOpen] = useState(prop.open);
+
     // const fetched = useRef(false);
     const dispatch = useDispatch();
 
@@ -37,6 +37,12 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
         setDevice(event.target.value);
         changeDevice(dispatch, event.target.value.toString());
     };
+
+    const onDismiss = useCallback(() => {
+        if (onClose) {
+            onClose({}, "escapeKeyDown");
+        }
+    }, [onClose]);
 
     const onLaunch = useCallback(() => {
         const selectedIndex = deviceList.findIndex((item) => {
@@ -58,14 +64,9 @@ const StartConfigDialog = ({ open, onClose }: StartConfigDialogProps) => {
             };
             console.log("frontend record service params: " + param);
             await frontend_record_service(param.cmd, param.deviceIndex);
+            onDone();
         });
-    }, [device, deviceList]);
-
-    const onDismiss = useCallback(() => {
-        if (onClose) {
-            onClose({}, "backdropClick");
-        }
-    }, [onClose]);
+    }, [device, deviceList, onDone]);
 
     useEffect(() => {
         if (!open) {

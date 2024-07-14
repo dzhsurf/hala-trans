@@ -103,6 +103,9 @@ export default function MyAppBar() {
                 onClose={() => {
                     return setOpen(false);
                 }}
+                onDone={() => {
+                    setOpen(false);
+                }}
             />
         </React.Fragment>
     );
