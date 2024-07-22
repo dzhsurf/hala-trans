@@ -22,6 +22,7 @@ pyaudio = "^0.2.14"
 sqlalchemy = "^2.0.31"
 gunicorn = "^22.0.0"
 uvicorn = "^0.30.1"
+pydantic-settings = "^2.3.4"
 
 [build-system]
 requires = ["poetry-core"]

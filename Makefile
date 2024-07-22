@@ -1,4 +1,4 @@
-.PHONE: install run test webui format clean
+.PHONE: install runBackend runFrontend test webui format clean
 
 PROJECT_NAME=halatrans
 PYTHON=python3
@@ -17,11 +17,14 @@ help: ## show this help.
 install: ## Install dependencies.
 	poetry install
 
-runDev: ## Local run in development env.
-	cd halatrans && uvicorn web:app
+runBackend: ## Local run backend service
+	cd halatrans && uvicorn web.backend:app 
+
+runFrontend: ## Local run frontend service
+	cd halatrans && uvicorn web.frontend:app
 
 runProd: ## Local run in production env.
-	cd halatrans && gunicorn -c gunicorn_config.py web:app
+	cd halatrans && gunicorn -c gunicorn_config.py web.backend:app
 
 webui: ## Local run web ui in dev mode.
 	cd webui/app && npm run start

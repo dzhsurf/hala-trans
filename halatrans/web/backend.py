@@ -4,19 +4,39 @@ import logging
 import queue
 import time
 from contextlib import asynccontextmanager
+from typing import Any, Optional, Tuple, Type
 
 from fastapi import BackgroundTasks, Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from halatrans.global_instance import GlobalInstance
-from halatrans.model.services import AudioStreamControlRequest, ServiceRequest
+from halatrans.config.config import Settings
+from halatrans.model.services import ServiceRequest
 from halatrans.services.backend.rts2t_service import RTS2TService
-from halatrans.services.frontend.audio_stream_service import \
-    AudioStreamServiceParameters
+from halatrans.services.service_backend_manager import BackendServiceManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class GlobalInstance:
+    def __init__(self):
+        self.backend_service_manager: Optional[BackendServiceManager] = None
+
+    async def startup(self, settings: Settings):
+        logger.info("Global instance startup.")
+        self.backend_service_manager = BackendServiceManager()
+        self.backend_service_manager.start()
+        logger.info("start backend service manager.")
+
+    def terminate(self):
+        logger.info("Global instance terminate.")
+        if self.backend_service_manager:
+            self.backend_service_manager.terminate()
+        self.backend_service_manager = None
+
+    def get_backend_service_manager(self) -> Optional[BackendServiceManager]:
+        return self.backend_service_manager
 
 
 global_instance = GlobalInstance()
@@ -29,8 +49,12 @@ async def get_global_instance() -> GlobalInstance:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Setup env
+    settings = Settings()
+
+    # Logic to run at startup
     instance = await get_global_instance()
-    instance.startup()
+    await instance.startup(settings)
     try:
         yield
     finally:
@@ -52,10 +76,16 @@ app.add_middleware(
 async def service_management_query(
     instance: GlobalInstance = Depends(get_global_instance),
 ):
-    state = "Running" if instance.get_backend_service_manager().is_running else ""
-    content = {
-        "runningState": state,
-    }
+    mgr = instance.get_backend_service_manager()
+    if mgr:
+        state = "Running" if mgr.is_running else ""
+        content = {
+            "runningState": state,
+        }
+    else:
+        content = {
+            "runningState": "",
+        }
     return JSONResponse(content, status_code=200)
 
 
@@ -64,7 +94,11 @@ async def service_management_ctrl(
     request: ServiceRequest,
     instance: GlobalInstance = Depends(get_global_instance),
 ):
-    msg = instance.get_backend_service_manager().run_command(request.cmd)
+    mgr = instance.get_backend_service_manager()
+    if mgr:
+        msg = mgr.run_command(request.cmd)
+    else:
+        msg = {"message": "Service not started."}
     content = {"message": msg}
     return JSONResponse(content, status_code=200)
 
@@ -73,12 +107,11 @@ async def service_management_ctrl(
 async def event_stream(instance: GlobalInstance = Depends(get_global_instance)):
     async def poll_queue():
         while True:
-            if not instance.get_backend_service_manager().is_running:
+            mgr = instance.get_backend_service_manager()
+            if (mgr is None) or (not mgr.is_running):
                 break
             item = None
-            service: RTS2TService = instance.get_backend_service_manager().get_service(
-                "rts2t-main"
-            )
+            service: RTS2TService = mgr.get_service("rts2t-main")
             if service is None:
                 # service not started
                 # logger.info("service is empty.")
@@ -108,40 +141,3 @@ async def event_stream(instance: GlobalInstance = Depends(get_global_instance)):
             await asyncio.sleep(wait_time)
 
     return StreamingResponse(poll_queue(), media_type="text/event-stream")
-
-
-# Frontend API
-@app.get("/api/devices")
-async def devices_query(instance: GlobalInstance = Depends(get_global_instance)):
-    audio_device = instance.get_frontend_service_manager().get_audio_device()
-
-    input = bytes(
-        json.dumps(
-            {
-                "cmd": "list-devices",
-            }
-        ),
-        encoding="utf-8",
-    )
-    resp = await audio_device.request(input)
-    return JSONResponse(json.loads(str(resp, encoding="utf-8")), status_code=200)
-
-
-@app.post("/api/record")
-async def start_record(
-    req: AudioStreamControlRequest,
-    instance: GlobalInstance = Depends(get_global_instance),
-):
-    # TODO: multi-user support
-
-    if req.cmd == "start":
-        p = AudioStreamServiceParameters()
-        if req.deviceIndex >= 0:
-            p.device = req.deviceIndex
-        instance.get_frontend_service_manager().launch_audio_stream(p)
-    elif req.cmd == "stop":
-        instance.get_frontend_service_manager().stop_audio_stream()
-    else:
-        logger.error(f"Unknow command: {req}")
-
-    return JSONResponse(dict(req), status_code=200)

@@ -43,6 +43,7 @@ def openai_chat_completions(client: OpenAI, text: str) -> str:
     content = response.choices[0].message.content
     return content
 
+
 # Do not use long sentence, response in short.
 def process_openai_assistant(
     client: OpenAI,
