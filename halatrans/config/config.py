@@ -17,12 +17,12 @@ class HALACustomSource(EnvSettingsSource):
             if value == "true" or value == "True":
                 return True
             return False
-        return json.loads(value)
+        return value
+        # return json.loads(value)
 
 
 class Settings(BaseSettings):
-    # backend: bool = Field(False, alias="ENABLE_BACKEND")
-    # frontend: bool = Field(False, alias="ENABLE_FRONTEND")
+    mode: str = Field("dev", alias="mode") # dev | prod 
 
     @classmethod
     def settings_customise_sources(

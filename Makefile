@@ -18,10 +18,10 @@ install: ## Install dependencies.
 	poetry install
 
 runBackend: ## Local run backend service
-	cd halatrans && uvicorn web.backend:app 
+	cd halatrans && uvicorn web.backend:app --host 127.0.0.1 --port 8000 --env-file=../dev.env
 
 runFrontend: ## Local run frontend service
-	cd halatrans && uvicorn web.frontend:app
+	cd halatrans && uvicorn web.frontend:app --host 127.0.0.1 --port 8001 --env-file=../dev.env
 
 runProd: ## Local run in production env.
 	cd halatrans && gunicorn -c gunicorn_config.py web.backend:app
