@@ -27,7 +27,7 @@ class AssistantServiceParameters:
 def openai_chat_completions(client: OpenAI, text: str) -> str:
     # use openai to translate the text
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         # response_format={"type": "json_object"},
         messages=[
             {
